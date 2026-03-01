@@ -1,0 +1,50 @@
+# ── Stage 1: Build the React frontend ─────────────────────────────────────────
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /frontend
+
+ARG VITE_API_BASE=http://10.99.0.1:8080
+ENV VITE_API_BASE=${VITE_API_BASE}
+
+COPY app/frontend/package*.json ./
+RUN npm ci
+
+COPY app/frontend/ ./
+RUN npm run build
+
+# ── Stage 2: Runtime (DHCP client + nginx + ws_bridge) ────────────────────────
+FROM python:3.11-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        iproute2 \
+        nginx \
+        supervisor \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY DHCP/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install websockets for the bridge
+COPY RUDP/requirements.txt /tmp/rudp-requirements.txt
+RUN pip install --no-cache-dir -r /tmp/rudp-requirements.txt
+
+COPY DHCP/dhcp_client.py .
+COPY RUDP/rudp_packet.py .
+COPY RUDP/rudp_socket.py .
+COPY RUDP/ws_bridge.py .
+
+COPY DHCP/entrypoint.sh /entrypoint.sh
+COPY DHCP/nginx.conf /etc/nginx/conf.d/default.conf
+COPY DHCP/supervisord.conf /etc/supervisord.conf
+
+# Remove the default Debian nginx site so our config is the only server block
+RUN rm -f /etc/nginx/sites-enabled/default
+
+# Copy the built frontend from stage 1
+COPY --from=frontend-builder /frontend/dist /usr/share/nginx/html
+
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]

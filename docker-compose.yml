@@ -1,0 +1,145 @@
+networks:
+  exam-net:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: exam-br0
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.99.0.0/24
+          gateway: 10.99.0.1
+          ip-range: 10.99.0.200/27
+
+services:
+  # ── DHCP ─────────────────────────────────────────────────────────
+  dhcp-server:
+    build:
+      context: ./DHCP
+      dockerfile: Dockerfile.server
+    container_name: dhcp-server
+    networks:
+      exam-net:
+        ipv4_address: 10.99.0.3
+    volumes:
+      - dhcp-leases:/app
+    restart: unless-stopped
+
+  # ── DNS hierarchy ────────────────────────────────────────────────
+  dns-root:
+    build:
+      context: .
+      dockerfile: DNS/Dockerfile
+    container_name: dns-root
+    environment:
+      - DNS_ROLE=root
+    networks:
+      exam-net:
+        ipv4_address: 10.99.0.10
+    restart: unless-stopped
+
+  dns-tld:
+    build:
+      context: .
+      dockerfile: DNS/Dockerfile
+    container_name: dns-tld
+    environment:
+      - DNS_ROLE=tld
+    networks:
+      exam-net:
+        ipv4_address: 10.99.0.11
+    restart: unless-stopped
+
+  dns-auth:
+    build:
+      context: .
+      dockerfile: DNS/Dockerfile
+    container_name: dns-auth
+    environment:
+      - DNS_ROLE=auth
+    networks:
+      exam-net:
+        ipv4_address: 10.99.0.12
+    restart: unless-stopped
+
+  dns-resolver:
+    build:
+      context: .
+      dockerfile: DNS/Dockerfile
+    container_name: dns-resolver
+    environment:
+      - DNS_ROLE=resolver
+      - ROOT_SERVER=10.99.0.10
+    networks:
+      exam-net:
+        ipv4_address: 10.99.0.2
+    restart: unless-stopped
+
+  # ── RUDP exam backend (3 instances) ─────────────────────────────
+  rudp-server-1:
+    build:
+      context: .
+      dockerfile: RUDP/Dockerfile.server
+    container_name: rudp-server-1
+    networks:
+      exam-net:
+        ipv4_address: 10.99.0.20
+    volumes:
+      - exam-shared:/app/shared
+    environment:
+      - RUDP_PORT=9000
+      - START_OFFSET_SEC=120
+    restart: unless-stopped
+
+  rudp-server-2:
+    build:
+      context: .
+      dockerfile: RUDP/Dockerfile.server
+    container_name: rudp-server-2
+    networks:
+      exam-net:
+        ipv4_address: 10.99.0.21
+    volumes:
+      - exam-shared:/app/shared
+    environment:
+      - RUDP_PORT=9000
+      - START_OFFSET_SEC=120
+    restart: unless-stopped
+
+  rudp-server-3:
+    build:
+      context: .
+      dockerfile: RUDP/Dockerfile.server
+    container_name: rudp-server-3
+    networks:
+      exam-net:
+        ipv4_address: 10.99.0.22
+    volumes:
+      - exam-shared:/app/shared
+    environment:
+      - RUDP_PORT=9000
+      - START_OFFSET_SEC=120
+    restart: unless-stopped
+
+  # ── Exam clients ─────────────────────────────────────────────────
+  client:
+    build:
+      context: .
+      dockerfile: DHCP/Dockerfile.client
+    networks:
+      - exam-net
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - DHCP_SERVER_IP=10.99.0.3
+      - RUDP_SERVER_HOST=server.exam.lan
+      - RUDP_SERVER_PORT=9000
+    depends_on:
+      - dhcp-server
+      - dns-resolver
+      - rudp-server-1
+    deploy:
+      replicas: 3
+
+volumes:
+  dhcp-leases:
+  exam-shared:
