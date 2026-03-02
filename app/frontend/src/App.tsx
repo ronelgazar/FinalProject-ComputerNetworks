@@ -86,8 +86,9 @@ class WSClient {
   private ws: WebSocket | null = null;
   private pending = new Map<string, { resolve: (v: any) => void; reject: (e: any) => void; t: number }>();
   private onEvent?: (msg: WSMessage) => void;
+  private url: string;
 
-  constructor(private url: string) {}
+  constructor(url: string) { this.url = url; }
 
   connect(onEvent?: (msg: WSMessage) => void) {
     this.onEvent = onEvent;
