@@ -100,18 +100,17 @@ _DEFAULT_EXAM = {
 
 
 def _load_exam() -> Dict[str, Any]:
-    if EXAM_JSON_PATH.exists():
-        try:
-            with EXAM_JSON_PATH.open() as f:
-                data = json.load(f)
-            log.info("Loaded exam from %s", EXAM_JSON_PATH)
-            return data
-        except Exception as e:
-            log.warning("Failed to load %s: %s — using default", EXAM_JSON_PATH, e)
+    # Admin-uploaded exam takes priority over baked-in file
+    for path in [SHARED_DIR / 'exam.json', EXAM_JSON_PATH]:
+        if path.exists():
+            try:
+                data = json.loads(path.read_text(encoding='utf-8'))
+                log.info("Loaded exam from %s", path)
+                return data
+            except Exception as e:
+                log.warning("Failed to load %s: %s", path, e)
     return _DEFAULT_EXAM
 
-
-_EXAM = _load_exam()
 
 # ── Shared start-time ─────────────────────────────────────────────────────────
 
@@ -144,6 +143,35 @@ async def _get_start_at_ms() -> int:
         return _EXAM_START_AT_MS
 
 
+# ── Client tracking ───────────────────────────────────────────────────────────
+
+CLIENTS_FILE  = SHARED_DIR / 'clients.json'
+_clients_lock = asyncio.Lock()
+
+
+async def _update_client(client_id: str, **fields):
+    async with _clients_lock:
+        SHARED_DIR.mkdir(parents=True, exist_ok=True)
+        try:
+            data = json.loads(CLIENTS_FILE.read_text()) if CLIENTS_FILE.exists() else {}
+        except Exception:
+            data = {}
+        if client_id not in data:
+            data[client_id] = {}
+        data[client_id].update(fields)
+        CLIENTS_FILE.write_text(json.dumps(data, indent=2))
+
+
+def _count_answered(answers: list) -> int:
+    count = 0
+    for a in answers:
+        if a.get('type') == 'mcq' and a.get('optionId') is not None:
+            count += 1
+        elif a.get('type') == 'text' and str(a.get('text', '')).strip():
+            count += 1
+    return count
+
+
 # ── Per-connection handler ────────────────────────────────────────────────────
 
 async def handle_connection(conn: RudpSocket):
@@ -174,7 +202,11 @@ async def handle_connection(conn: RudpSocket):
             if msg_type == 'hello':
                 client_id = msg.get('client_id', 'unknown')
                 log.info("hello from client_id=%s", client_id)
-                # No reply expected — connection ACK is implicit
+                await _update_client(client_id,
+                    connected_at=int(time.time() * 1000),
+                    submitted=False,
+                    answers_count=0,
+                )
 
             elif msg_type == 'time_req':
                 await _send(conn, {
@@ -185,47 +217,61 @@ async def handle_connection(conn: RudpSocket):
 
             elif msg_type == 'schedule_req':
                 start_ms = await _get_start_at_ms()
-                exam_id  = _EXAM['exam_id']
+                current_exam = _load_exam()
+                exam_id = current_exam['exam_id']
                 await _send(conn, {
                     "type": "schedule_resp",
                     "req_id": req_id,
                     "exam_id": exam_id,
                     "start_at_server_ms": start_ms,
-                    "duration_sec": _EXAM['duration_sec'],
+                    "duration_sec": current_exam['duration_sec'],
                 })
 
             elif msg_type == 'exam_req':
+                # Load fresh from disk so admin-uploaded exam takes effect
+                current_exam = _load_exam()
                 await _send(conn, {
                     "type": "exam_resp",
                     "req_id": req_id,
-                    "exam": _EXAM,
+                    "exam": current_exam,
                 })
+                if client_id:
+                    await _update_client(client_id,
+                        exam_started_at=int(time.time() * 1000),
+                        total_questions=len(current_exam.get('questions', [])),
+                    )
 
             elif msg_type == 'answers_save':
-                _save_answers(
-                    msg.get('exam_id', exam_id or 'unknown'),
-                    client_id or 'unknown',
-                    msg.get('answers', []),
-                )
+                answers = msg.get('answers', [])
+                eid = msg.get('exam_id', exam_id or 'unknown')
+                _save_answers(eid, client_id or 'unknown', answers)
                 await _send(conn, {
                     "type": "answers_saved",
                     "req_id": req_id,
                     "ok": True,
                 })
+                if client_id:
+                    await _update_client(client_id,
+                        answers_count=_count_answered(answers),
+                        last_active=int(time.time() * 1000),
+                    )
 
             elif msg_type == 'submit_req':
-                _save_answers(
-                    msg.get('exam_id', exam_id or 'unknown'),
-                    client_id or 'unknown',
-                    msg.get('answers', []),
-                    final=True,
-                )
+                answers = msg.get('answers', [])
+                eid = msg.get('exam_id', exam_id or 'unknown')
+                _save_answers(eid, client_id or 'unknown', answers, final=True)
                 log.info("Submission from client_id=%s", client_id)
                 await _send(conn, {
                     "type": "submit_resp",
                     "req_id": req_id,
                     "ok": True,
                 })
+                if client_id:
+                    await _update_client(client_id,
+                        submitted=True,
+                        submitted_at=int(time.time() * 1000),
+                        answers_count=_count_answered(answers),
+                    )
 
             else:
                 await _send(conn, {

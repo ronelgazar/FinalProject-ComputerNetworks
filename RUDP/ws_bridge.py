@@ -15,7 +15,6 @@ import os
 import socket
 
 import websockets
-from websockets.server import WebSocketServerProtocol
 
 from rudp_socket import rudp_connect, RudpTimeout, RudpReset
 
@@ -43,7 +42,7 @@ def _resolve_server() -> str:
     return ip
 
 
-async def _ws_to_rudp(ws: WebSocketServerProtocol, rudp):
+async def _ws_to_rudp(ws, rudp):
     """Forward WebSocket frames → RUDP."""
     async for message in ws:
         try:
@@ -56,7 +55,7 @@ async def _ws_to_rudp(ws: WebSocketServerProtocol, rudp):
             break
 
 
-async def _rudp_to_ws(ws: WebSocketServerProtocol, rudp):
+async def _rudp_to_ws(ws, rudp):
     """Forward RUDP messages → WebSocket."""
     while not rudp._closed:
         try:
@@ -72,20 +71,22 @@ async def _rudp_to_ws(ws: WebSocketServerProtocol, rudp):
             break
 
 
-async def handle_ws(ws: WebSocketServerProtocol):
+async def handle_ws(ws):
     log.info("WebSocket connection from %s", ws.remote_address)
     try:
-        server_ip = await asyncio.get_event_loop().run_in_executor(
-            None, _resolve_server
-        )
+        loop = asyncio.get_running_loop()
+        server_ip = await loop.run_in_executor(None, _resolve_server)
         rudp = await rudp_connect(server_ip, RUDP_SERVER_PORT)
         log.info("RUDP connected to %s:%d", server_ip, RUDP_SERVER_PORT)
     except Exception as e:
         log.error("Failed to connect RUDP: %s", e)
-        await ws.send(json.dumps({
-            "type": "error",
-            "message": f"Bridge could not connect to exam server: {e}",
-        }))
+        try:
+            await ws.send(json.dumps({
+                "type": "error",
+                "message": f"Bridge could not connect to exam server: {e}",
+            }))
+        except Exception:
+            pass
         return
 
     try:
