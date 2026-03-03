@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
-type Phase = "boot" | "connecting" | "syncing" | "waiting" | "running" | "submitted" | "error";
+type Phase = "boot" | "connecting" | "syncing" | "waiting" | "open" | "running" | "submitted" | "error";
 
 type Question =
   | { id: string; type: "mcq"; prompt: string; options: { id: string; text: string }[]; points?: number }
@@ -48,17 +48,6 @@ function formatCountdown(ms: number) {
   if (h > 0) return `${sign}${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   return `${sign}${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
-function formatDuration(ms: number) {
-  const sign = ms < 0 ? "-" : "";
-  const abs = Math.abs(ms);
-  const totalSec = Math.floor(abs / 1000);
-  const m = Math.floor(totalSec / 60);
-  const s = totalSec % 60;
-  const msR = abs % 1000;
-  if (m > 0) return `${sign}${m}ד ${String(s).padStart(2, "0")}ש`;
-  if (totalSec > 0) return `${sign}${s}ש`;
-  return `${sign}${msR.toFixed(0)}ms`;
-}
 function timeAgo(tMs: number) {
   const d = nowMs() - tMs;
   if (d < 1000) return "עכשיו";
@@ -79,9 +68,14 @@ type WSMessage =
   | { type: "exam_resp"; req_id: string; exam: ExamPayload }
   | { type: "answers_save"; req_id: string; exam_id: string; answers: Answer[] }
   | { type: "answers_saved"; req_id: string; ok: true }
+  | { type: "exam_begin"; req_id: string; exam_id: string; opened_at_ms: number }
+  | { type: "exam_begin_ack"; req_id: string; ok: true }
   | { type: "submit_req"; req_id: string; exam_id: string }
   | { type: "submit_resp"; req_id: string; ok: true }
-  | { type: "error"; req_id?: string; message: string };
+  | { type: "error"; req_id?: string; message: string }
+  | { type: "connection_info"; dns_hostname: string; dns_resolver: string;
+      resolved_ip: string; all_ips: string[];
+      handshake_rtt_ms?: number; rtt_ms?: number };
 
 function rid() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -226,11 +220,17 @@ export default function App() {
   const offsetMs = bestSample?.offset ?? 0;
   const [syncQuality, setSyncQuality] = useState<"לא ידוע" | "טוב" | "בינוני" | "חלש">("לא ידוע");
 
+  const [connInfo, setConnInfo] = useState<ConnInfo>(null);
+  const [syncDelivery, setSyncDelivery] = useState<{
+    deliver_delay_ms: number; max_rtt_ms: number; my_rtt_ms: number; relay_candidate: string | null;
+  } | null>(null);
+
   const [examId, setExamId] = useState<string | null>(null);
   const [startAtServerMs, setStartAtServerMs] = useState<number | null>(null);
   const [durationSec, setDurationSec] = useState<number | null>(null);
 
   const [exam, setExam] = useState<ExamPayload | null>(null);
+  const [openedAtMs, setOpenedAtMs] = useState<number | null>(null);   // when exam became available
   const [activeQ, setActiveQ] = useState<number>(0);
   const [answers, setAnswers] = useState<Record<string, Answer>>({});
   const [saving, setSaving] = useState<boolean>(false);
@@ -262,7 +262,11 @@ export default function App() {
         setPhase("connecting");
         const ws = new WSClient(WS_URL);
         wsRef.current = ws;
-        await ws.connect();
+        await ws.connect((msg) => {
+          if (msg.type === "connection_info") {
+            setConnInfo(msg);
+          }
+        });
         if (!alive) return;
 
         ws.send({ type: "hello", client_id: `web-${Math.random().toString(36).slice(2, 8)}` });
@@ -292,11 +296,21 @@ export default function App() {
         const sched = await ws.request<{
           type: "schedule_resp"; req_id: string; exam_id: string;
           start_at_server_ms: number; duration_sec: number;
+          deliver_delay_ms?: number; max_rtt_ms?: number;
+          my_rtt_ms?: number; relay_candidate?: string | null;
         }>({ type: "schedule_req", req_id: rid() }, 4000);
 
         setExamId(sched.exam_id);
         setStartAtServerMs(sched.start_at_server_ms);
         setDurationSec(sched.duration_sec);
+        if (sched.deliver_delay_ms !== undefined) {
+          setSyncDelivery({
+            deliver_delay_ms: sched.deliver_delay_ms,
+            max_rtt_ms: sched.max_rtt_ms ?? 0,
+            my_rtt_ms: sched.my_rtt_ms ?? 0,
+            relay_candidate: sched.relay_candidate ?? null,
+          });
+        }
         setPhase("waiting");
       } catch (e: any) {
         setError(e?.message ?? String(e));
@@ -307,7 +321,7 @@ export default function App() {
     return () => { alive = false; wsRef.current?.close(); wsRef.current = null; };
   }, []);
 
-  // ── waiting → running ────────────────────────────────────────────────────
+  // ── waiting → open: fetch exam at T₀, record opened_at ──────────────────
   useEffect(() => {
     if (phase !== "waiting") return;
     if (!examId || !startAtServerMs) return;
@@ -317,11 +331,12 @@ export default function App() {
       try {
         const ws = wsRef.current;
         if (!ws) throw new Error("Socket לא זמין");
-        setPhase("running");
+        const openedAt = nowMs();
         const exResp = await ws.request<{ type: "exam_resp"; req_id: string; exam: ExamPayload }>(
           { type: "exam_req", req_id: rid(), exam_id: examId }, 6000
         );
         setExam(exResp.exam);
+        setOpenedAtMs(openedAt);
         const init: Record<string, Answer> = {};
         for (const q of exResp.exam.questions) {
           init[q.id] = q.type === "mcq"
@@ -329,6 +344,7 @@ export default function App() {
             : { qid: q.id, type: "text", text: "" };
         }
         setAnswers(init);
+        setPhase("open");
       } catch (e: any) {
         setError(e?.message ?? String(e));
         setPhase("error");
@@ -336,6 +352,18 @@ export default function App() {
     }, delay);
     return () => window.clearTimeout(t);
   }, [phase, examId, startAtServerMs, offsetMs]);
+
+  // ── open → running: student clicks start ─────────────────────────────────
+  const handleStartExam = async () => {
+    const ws = wsRef.current;
+    if (!ws || !examId || !openedAtMs) return;
+    try {
+      await ws.request<{ type: "exam_begin_ack"; req_id: string; ok: true }>(
+        { type: "exam_begin", req_id: rid(), exam_id: examId, opened_at_ms: openedAtMs }, 4000
+      );
+    } catch { /* non-critical — transition anyway */ }
+    setPhase("running");
+  };
 
   // ── Autosave ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -354,27 +382,6 @@ export default function App() {
     }, 10_000);
     return () => { if (autosaveTimer.current) window.clearInterval(autosaveTimer.current); autosaveTimer.current = null; };
   }, [phase, examId, answers]);
-
-  // ── Auto-submit on time up ────────────────────────────────────────────────
-  useEffect(() => {
-    if (phase !== "running" || msLeft == null || msLeft > 0) return;
-    (async () => {
-      try {
-        const ws = wsRef.current;
-        if (!ws || !examId) return;
-        setSaving(true);
-        await ws.request<{ type: "answers_saved"; req_id: string; ok: true }>(
-          { type: "answers_save", req_id: rid(), exam_id: examId, answers: Object.values(answers) }, 4000
-        );
-        await ws.request<{ type: "submit_resp"; req_id: string; ok: true }>(
-          { type: "submit_req", req_id: rid(), exam_id: examId }, 5000
-        );
-        setPhase("submitted");
-      } catch (e: any) {
-        setError(e?.message ?? String(e)); setPhase("error");
-      } finally { setSaving(false); }
-    })();
-  }, [phase, msLeft, examId, answers]);
 
   // ── Answered count ────────────────────────────────────────────────────────
   const answeredCount = useMemo(() => Object.values(answers).filter(a =>
@@ -451,7 +458,12 @@ export default function App() {
             ⏱ מתחיל בעוד {formatCountdown(msToStart)}
           </div>
         )}
-        {phase === "running" && msLeft != null && msLeft > 0 && (
+        {phase === "open" && (
+          <div style={{ ...s.timerPill, background: "#f0fdf4", color: "#16a34a", border: "1.5px solid #bbf7d0" }}>
+            ✅ הבחינה נפתחה
+          </div>
+        )}
+        {(phase === "running") && msLeft != null && msLeft > 0 && (
           <div style={{
             ...s.timerPill,
             background: isUrgent ? "#fee2e2" : isLowTime ? "#fff7ed" : "#f0fdf4",
@@ -460,6 +472,11 @@ export default function App() {
             animation:  isUrgent ? "pulse-red 1s ease-in-out infinite" : "none",
           }}>
             ⏱ {formatCountdown(msLeft)}
+          </div>
+        )}
+        {phase === "running" && msLeft != null && msLeft <= 0 && (
+          <div style={{ ...s.timerPill, background: "#fee2e2", color: "#dc2626", border: "1.5px solid #fca5a5", animation: "pulse-red 1s ease-in-out infinite" }}>
+            ⛔ הזמן נגמר — הגש עכשיו!
           </div>
         )}
 
@@ -491,17 +508,25 @@ export default function App() {
       <div style={s.page}>
         {topBar}
         <main style={s.main}>
-          {phase === "connecting" && <ConnectingScreen url={WS_URL} />}
-          {phase === "syncing"    && <SyncPanel samples={syncSamples} total={12} />}
+          {phase === "connecting" && <ConnectingScreen url={WS_URL} connInfo={connInfo} />}
+          {phase === "syncing"    && <SyncPanel samples={syncSamples} total={12} connInfo={connInfo} />}
           {phase === "waiting"    && (
             <WaitingRoom
               examId={examId}
               startAtServerMs={startAtServerMs}
               durationSec={durationSec}
-              serverNow={serverNow}
               offsetMs={offsetMs}
               bestSample={bestSample}
               msToStart={msToStart}
+              syncDelivery={syncDelivery}
+            />
+          )}
+          {phase === "open" && exam && startAtServerMs && (
+            <ExamOpenedScreen
+              exam={exam}
+              openedAtMs={openedAtMs!}
+              startAtServerMs={startAtServerMs}
+              onStart={handleStartExam}
             />
           )}
           {phase === "running" && exam && (
@@ -526,19 +551,138 @@ export default function App() {
   );
 }
 
+type ConnInfo = {
+  dns_hostname: string; dns_resolver: string; resolved_ip: string; all_ips: string[];
+  handshake_rtt_ms?: number; rtt_ms?: number;
+} | null;
+
+type SyncDelivery = {
+  deliver_delay_ms: number; max_rtt_ms: number; my_rtt_ms: number; relay_candidate: string | null;
+} | null;
+
 // ── Connecting ────────────────────────────────────────────────────────────────
-function ConnectingScreen({ url }: { url: string }) {
+function ConnectingScreen({ url, connInfo }: { url: string; connInfo: ConnInfo }) {
   return (
     <div className="fade-in" style={s.centerCard}>
       <div className="spinner" />
       <div style={{ fontWeight: 700, fontSize: 18, color: "#0f172a", marginTop: 20 }}>מתחבר לשרת…</div>
       <div style={{ fontSize: 13, color: "#64748b", marginTop: 6, fontFamily: "monospace" }}>{url}</div>
+      {connInfo && <DnsInfoCard connInfo={connInfo} />}
+    </div>
+  );
+}
+
+// ── DNS + RTT info card (shown during connecting + syncing) ───────────────────
+function DnsInfoCard({ connInfo }: { connInfo: NonNullable<ConnInfo> }) {
+  return (
+    <div style={{
+      width: "100%", marginTop: 20,
+      background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "14px 16px",
+      textAlign: "right",
+    }}>
+      <div style={{ fontWeight: 700, fontSize: 12, color: "#166534", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+        <span>🌐</span> DNS Resolution — {connInfo.dns_hostname}
+      </div>
+      {/* Resolution chain */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", fontSize: 12, fontFamily: "monospace" }}>
+        <span style={{ color: "#64748b" }}>Resolver</span>
+        <span style={{ color: "#94a3b8" }}>{connInfo.dns_resolver}</span>
+        <span style={{ color: "#94a3b8" }}>→</span>
+        <span style={{ fontWeight: 700, color: "#0f172a" }}>{connInfo.dns_hostname}</span>
+        <span style={{ color: "#94a3b8" }}>→</span>
+        {connInfo.all_ips.map((ip) => (
+          <span key={ip} style={{
+            padding: "2px 8px", borderRadius: 6,
+            background: ip === connInfo.resolved_ip ? "#2563eb" : "#e2e8f0",
+            color: ip === connInfo.resolved_ip ? "#fff" : "#64748b",
+            fontWeight: ip === connInfo.resolved_ip ? 700 : 400,
+          }}>
+            {ip}{ip === connInfo.resolved_ip ? " ✓" : ""}
+          </span>
+        ))}
+      </div>
+      <div style={{ fontSize: 11, color: "#4ade80", marginTop: 8 }}>
+        ✓ נפתרה דרך היררכיית DNS: Resolver → Root → TLD (.lan) → Auth (exam.lan)
+      </div>
+      {/* RTT measurement */}
+      {connInfo.handshake_rtt_ms !== undefined && (
+        <div style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <span style={{
+            padding: "3px 10px", borderRadius: 99, fontSize: 11, fontFamily: "monospace",
+            background: "#dcfce7", color: "#166534", fontWeight: 700,
+          }}>
+            RUDP handshake RTT: {connInfo.handshake_rtt_ms.toFixed(1)} ms
+          </span>
+          {connInfo.rtt_ms !== undefined && (
+            <span style={{
+              padding: "3px 10px", borderRadius: 99, fontSize: 11, fontFamily: "monospace",
+              background: "#eff6ff", color: "#1d4ed8", fontWeight: 700,
+            }}>
+              EWMA RTT: {connInfo.rtt_ms.toFixed(1)} ms
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Synchronized delivery card ────────────────────────────────────────────────
+function SyncDeliveryCard({ sd }: { sd: NonNullable<SyncDelivery> }) {
+  const isFastest = sd.deliver_delay_ms > sd.max_rtt_ms / 2;
+  const pct = sd.max_rtt_ms > 0 ? Math.round((sd.deliver_delay_ms / (sd.max_rtt_ms + 30)) * 100) : 0;
+
+  return (
+    <div style={{
+      width: "100%", marginTop: 14,
+      background: "#eff6ff", border: "1px solid #bfdbfe", borderRadius: 10, padding: "14px 16px",
+      textAlign: "right",
+    }}>
+      <div style={{ fontWeight: 700, fontSize: 12, color: "#1d4ed8", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+        <span>⚡</span> Synchronized Delivery (per-packet scheduling)
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+        <div style={{ background: "#fff", borderRadius: 8, padding: "8px 12px", border: "1px solid #e2e8f0" }}>
+          <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2 }}>My RTT to server</div>
+          <div style={{ fontWeight: 800, fontSize: 16, fontFamily: "monospace", color: "#0f172a" }}>{sd.my_rtt_ms.toFixed(1)} ms</div>
+        </div>
+        <div style={{ background: "#fff", borderRadius: 8, padding: "8px 12px", border: "1px solid #e2e8f0" }}>
+          <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 2 }}>Slowest client RTT</div>
+          <div style={{ fontWeight: 800, fontSize: 16, fontFamily: "monospace", color: "#0f172a" }}>{sd.max_rtt_ms.toFixed(1)} ms</div>
+        </div>
+      </div>
+      {/* Delivery delay bar */}
+      <div style={{ marginBottom: 6 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#64748b", marginBottom: 4 }}>
+          <span>Bridge holds packet for:</span>
+          <span style={{ fontWeight: 700, color: "#1d4ed8", fontFamily: "monospace" }}>
+            {sd.deliver_delay_ms} ms
+          </span>
+        </div>
+        <div style={{ background: "#e2e8f0", borderRadius: 99, height: 8 }}>
+          <div style={{
+            width: `${Math.min(pct, 100)}%`, height: 8, borderRadius: 99,
+            background: isFastest ? "#2563eb" : "#10b981",
+            transition: "width 0.3s",
+          }} />
+        </div>
+      </div>
+      <div style={{ fontSize: 11, color: "#3b82f6", lineHeight: 1.5 }}>
+        {sd.deliver_delay_ms > 0
+          ? `delay = (max_rtt − my_rtt)/2 + buffer = ${sd.deliver_delay_ms} ms → הגשר מחכה לפני הצגה`
+          : `הלקוח האיטי ביותר — delay = buffer בלבד (${sd.deliver_delay_ms} ms)`}
+        {sd.relay_candidate && (
+          <span style={{ display: "block", marginTop: 4, color: "#7c3aed" }}>
+            📡 Relay candidate: {sd.relay_candidate} (lowest RTT — best relay node)
+          </span>
+        )}
+      </div>
     </div>
   );
 }
 
 // ── Sync ──────────────────────────────────────────────────────────────────────
-function SyncPanel({ samples, total }: { samples: SyncSample[]; total: number }) {
+function SyncPanel({ samples, total, connInfo }: { samples: SyncSample[]; total: number; connInfo: ConnInfo }) {
   const best = useMemo(() => samples.length ? [...samples].sort((a, b) => a.rtt - b.rtt)[0] : null, [samples]);
   const pct = Math.round((samples.length / total) * 100);
 
@@ -574,10 +718,9 @@ function SyncPanel({ samples, total }: { samples: SyncSample[]; total: number })
             const h = Math.max(4, (s.rtt / maxRtt) * 40);
             const isBest = s === best;
             return (
-              <div key={i} style={{
+              <div key={i} title={`RTT: ${s.rtt.toFixed(1)}ms`} style={{
                 flex: 1, height: h, borderRadius: 3,
                 background: isBest ? "#2563eb" : "#bfdbfe",
-                title: `RTT: ${s.rtt.toFixed(1)}ms`,
               }} />
             );
           })}
@@ -586,16 +729,18 @@ function SyncPanel({ samples, total }: { samples: SyncSample[]; total: number })
       <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 6 }}>
         עמודה כחולה כהה = דגימה בשימוש (RTT מינימלי)
       </div>
+      {connInfo && <DnsInfoCard connInfo={connInfo} />}
     </div>
   );
 }
 
 // ── Waiting room ──────────────────────────────────────────────────────────────
 function WaitingRoom({
-  examId, startAtServerMs, durationSec, serverNow, offsetMs, bestSample, msToStart,
+  examId, startAtServerMs, durationSec, offsetMs, bestSample, msToStart, syncDelivery,
 }: {
   examId: string | null; startAtServerMs: number | null; durationSec: number | null;
-  serverNow: number; offsetMs: number; bestSample: SyncSample | null; msToStart: number | null;
+  offsetMs: number; bestSample: SyncSample | null; msToStart: number | null;
+  syncDelivery: SyncDelivery;
 }) {
   const totalSec = durationSec ?? 0;
   const h = Math.floor(totalSec / 3600);
@@ -654,6 +799,9 @@ function WaitingRoom({
           ⚠ אין לסגור את הדפדפן. גם אם יש עיכוב ברשת — ההתחלה מתוזמנת לשעון המקומי המחושב.
         </div>
       </div>
+
+      {/* Synchronized delivery details */}
+      {syncDelivery && <SyncDeliveryCard sd={syncDelivery} />}
     </div>
   );
 }
@@ -897,6 +1045,77 @@ function ExamView({
             {total - answeredCount} שאלות עדיין ריקות. ניתן להגיש בכל מקרה.
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ── Exam opened (waiting for student to click start) ─────────────────────────
+function ExamOpenedScreen({
+  exam, openedAtMs, startAtServerMs, onStart,
+}: {
+  exam: ExamPayload;
+  openedAtMs: number;
+  startAtServerMs: number;
+  onStart: () => void;
+}) {
+  const deltaMs = Math.round(openedAtMs - startAtServerMs);
+  const sign = deltaMs >= 0 ? "+" : "";
+
+  return (
+    <div className="fade-in" style={{ ...s.centerCard, maxWidth: 520 }}>
+      <div style={{ fontSize: 56 }}>🔓</div>
+      <div style={{ fontWeight: 800, fontSize: 26, color: "#0f172a", marginTop: 16, textAlign: "center" }}>
+        הבחינה נפתחה!
+      </div>
+      <div style={{ fontSize: 14, color: "#64748b", marginTop: 6, textAlign: "center" }}>
+        {exam.title}
+      </div>
+
+      {/* Timing proof */}
+      <div style={{
+        width: "100%", marginTop: 24, padding: "14px 18px",
+        background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10,
+        display: "grid", gap: 8,
+      }}>
+        <div style={{ fontWeight: 700, fontSize: 12, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+          טביעת זמן
+        </div>
+        <div style={s.summaryRow}>
+          <span style={{ color: "#64748b" }}>T₀ רשמי (שרת)</span>
+          <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{new Date(startAtServerMs).toLocaleTimeString("he-IL", { hour12: false })}.{String(startAtServerMs % 1000).padStart(3, "0")}</span>
+        </div>
+        <div style={s.summaryRow}>
+          <span style={{ color: "#64748b" }}>נפתח אצלי</span>
+          <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{new Date(openedAtMs).toLocaleTimeString("he-IL", { hour12: false })}.{String(Math.round(openedAtMs) % 1000).padStart(3, "0")}</span>
+        </div>
+        <div style={s.summaryRow}>
+          <span style={{ color: "#64748b" }}>הפרש מ-T₀</span>
+          <span style={{
+            fontFamily: "monospace", fontWeight: 700,
+            color: Math.abs(deltaMs) < 200 ? "#16a34a" : Math.abs(deltaMs) < 500 ? "#d97706" : "#dc2626",
+          }}>
+            {sign}{deltaMs} ms
+          </span>
+        </div>
+        <div style={s.summaryRow}>
+          <span style={{ color: "#64748b" }}>שאלות</span>
+          <span style={{ fontWeight: 700 }}>{exam.questions.length} · {exam.duration_sec / 60} דקות</span>
+        </div>
+      </div>
+
+      <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 16, textAlign: "center" }}>
+        {exam.instructions}
+      </div>
+
+      <button
+        style={{ ...s.btnSubmit, marginTop: 28, width: "100%", fontSize: 17, padding: "16px 0", background: "#2563eb" }}
+        onClick={onStart}
+      >
+        התחל לענות ←
+      </button>
+      <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 10 }}>
+        לחיצה זו תירשם כשעת תחילת המענה שלך
       </div>
     </div>
   );

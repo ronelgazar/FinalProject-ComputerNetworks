@@ -37,6 +37,56 @@ _EXAM_START_AT_MS: Optional[int] = (
     int(os.environ['EXAM_START_AT_MS']) if 'EXAM_START_AT_MS' in os.environ else None
 )
 
+# ── Per-packet synchronized delivery ─────────────────────────────────────────
+# Strategy: server stamps each content packet with deliver_delay_ms.
+# Fast clients (low RTT) wait longer; slow clients get it immediately.
+# Result: all clients receive the packet at the same wall-clock moment.
+
+_client_rtts: Dict[str, float] = {}   # client_id → EWMA RTT in ms
+_rtt_lock = asyncio.Lock()
+JITTER_BUFFER_MS = 30                  # extra slack on top of max RTT
+
+
+async def _register_client_rtt(client_id: str, rtt_ms: float):
+    async with _rtt_lock:
+        _client_rtts[client_id] = rtt_ms
+    log.info("RTT registry: client=%s rtt=%.1fms  all=%s",
+             client_id, rtt_ms,
+             {k: round(v, 1) for k, v in _client_rtts.items()})
+
+
+def _get_max_rtt_ms() -> float:
+    return max(_client_rtts.values(), default=100.0)
+
+
+def _deliver_delay_ms(client_id: Optional[str]) -> int:
+    """
+    How many ms this client's bridge should hold the packet before forwarding.
+
+    Derivation (assuming symmetric RTT):
+      - Server sends packet at T_send.
+      - Bridge receives it at T_send + rtt/2  (one-way latency).
+      - We want every client's browser to receive at T_send + max_rtt/2 + BUFFER.
+      - Therefore: deliver_delay = (max_rtt - my_rtt) / 2 + BUFFER
+
+    The slowest client waits only BUFFER ms; the fastest client waits
+    (max_rtt - my_rtt)/2 + BUFFER, so all browsers see the packet at the
+    same wall-clock instant.
+    """
+    if not client_id or client_id not in _client_rtts:
+        return 0
+    max_rtt = _get_max_rtt_ms()
+    my_rtt  = _client_rtts[client_id]
+    delay   = max(0, (max_rtt - my_rtt) / 2 + JITTER_BUFFER_MS)
+    return int(delay)
+
+
+def _relay_candidate() -> Optional[str]:
+    """Client with lowest RTT — best relay candidate for future optimisation."""
+    if len(_client_rtts) < 2:
+        return None
+    return min(_client_rtts, key=lambda k: _client_rtts[k])
+
 # ── Exam content ──────────────────────────────────────────────────────────────
 
 _DEFAULT_EXAM = {
@@ -201,9 +251,12 @@ async def handle_connection(conn: RudpSocket):
 
             if msg_type == 'hello':
                 client_id = msg.get('client_id', 'unknown')
-                log.info("hello from client_id=%s", client_id)
+                rtt_ms    = float(msg.get('rtt_ms', 50.0))
+                log.info("hello from client_id=%s rtt_ms=%.1f", client_id, rtt_ms)
+                await _register_client_rtt(client_id, rtt_ms)
                 await _update_client(client_id,
                     connected_at=int(time.time() * 1000),
+                    rtt_ms=round(rtt_ms, 2),
                     submitted=False,
                     answers_count=0,
                 )
@@ -219,26 +272,54 @@ async def handle_connection(conn: RudpSocket):
                 start_ms = await _get_start_at_ms()
                 current_exam = _load_exam()
                 exam_id = current_exam['exam_id']
+                delay   = _deliver_delay_ms(client_id)
                 await _send(conn, {
-                    "type": "schedule_resp",
-                    "req_id": req_id,
-                    "exam_id": exam_id,
+                    "type":               "schedule_resp",
+                    "req_id":             req_id,
+                    "exam_id":            exam_id,
                     "start_at_server_ms": start_ms,
-                    "duration_sec": current_exam['duration_sec'],
+                    "duration_sec":       current_exam['duration_sec'],
+                    # Synchronized delivery metadata
+                    "deliver_delay_ms":   delay,
+                    "max_rtt_ms":         round(_get_max_rtt_ms(), 2),
+                    "my_rtt_ms":          round(_client_rtts.get(client_id, 50.0) if client_id else 50.0, 2),
+                    "relay_candidate":    _relay_candidate(),
                 })
 
             elif msg_type == 'exam_req':
                 # Load fresh from disk so admin-uploaded exam takes effect
                 current_exam = _load_exam()
+                delay = _deliver_delay_ms(client_id)
                 await _send(conn, {
-                    "type": "exam_resp",
+                    "type":             "exam_resp",
+                    "req_id":           req_id,
+                    "exam":             current_exam,
+                    # Synchronized delivery — bridge holds this packet until
+                    # deliver_delay_ms elapses so all clients see exam at once
+                    "deliver_delay_ms": delay,
+                    "max_rtt_ms":       round(_get_max_rtt_ms(), 2),
+                    "my_rtt_ms":        round(_client_rtts.get(client_id, 50.0) if client_id else 50.0, 2),
+                })
+                if client_id:
+                    # exam_opened_at = when the exam became visible to this client (≈ T₀)
+                    await _update_client(client_id,
+                        exam_opened_at=int(time.time() * 1000),
+                        total_questions=len(current_exam.get('questions', [])),
+                    )
+
+            elif msg_type == 'exam_begin':
+                # Student clicked "Start" — record when they actually began answering
+                opened_at_ms = msg.get('opened_at_ms', int(time.time() * 1000))
+                log.info("exam_begin from client_id=%s opened_at_ms=%d", client_id, opened_at_ms)
+                await _send(conn, {
+                    "type": "exam_begin_ack",
                     "req_id": req_id,
-                    "exam": current_exam,
+                    "ok": True,
                 })
                 if client_id:
                     await _update_client(client_id,
-                        exam_started_at=int(time.time() * 1000),
-                        total_questions=len(current_exam.get('questions', [])),
+                        exam_opened_at=opened_at_ms,           # client-reported T₀ receipt time
+                        student_started_at=int(time.time() * 1000),  # when they clicked Start
                     )
 
             elif msg_type == 'answers_save':

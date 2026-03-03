@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(python3:*)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(npx tsc:*)",
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(docker compose:*)"
     ]
   }
 }

@@ -14,8 +14,11 @@ from __future__ import annotations
 import json
 import os
 import pathlib
-import time
-from typing import Any, Dict
+import random
+import socket
+import struct
+import time as _time
+from typing import Any, Dict, List
 
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse
@@ -24,6 +27,151 @@ app = FastAPI(title="Exam Admin Panel")
 
 SHARED_DIR  = pathlib.Path(os.environ.get('SHARED_DIR',  '/app/shared'))
 ANSWERS_DIR = pathlib.Path(os.environ.get('ANSWERS_DIR', '/app/answers'))
+DNS_ROOT    = os.environ.get('DNS_ROOT',     '10.99.0.10')
+
+
+# ── Minimal inline DNS client (for trace endpoint) ────────────────────────────
+
+def _dns_encode_name(name: str) -> bytes:
+    out = b''
+    for label in name.rstrip('.').split('.'):
+        out += bytes([len(label)]) + label.encode()
+    return out + b'\x00'
+
+
+def _dns_decode_name(data: bytes, offset: int):
+    labels: List[str] = []
+    visited: set = set()
+    while offset < len(data):
+        if offset in visited:
+            break
+        visited.add(offset)
+        length = data[offset]
+        if length == 0:
+            offset += 1
+            break
+        elif (length & 0xC0) == 0xC0:
+            ptr = ((length & 0x3F) << 8) | data[offset + 1]
+            sub, _ = _dns_decode_name(data, ptr)
+            if sub:
+                labels.append(sub)
+            offset += 2
+            break
+        else:
+            labels.append(data[offset + 1: offset + 1 + length].decode('ascii', errors='replace'))
+            offset += 1 + length
+    return '.'.join(labels), offset
+
+
+def _dns_parse_rrs(data: bytes, offset: int, count: int):
+    rrs = []
+    for _ in range(count):
+        name, offset = _dns_decode_name(data, offset)
+        if offset + 10 > len(data):
+            break
+        rtype, _cls, ttl, rdlen = struct.unpack_from('!HHIH', data, offset)
+        offset += 10
+        rdata_offset = offset
+        rdata = data[offset: offset + rdlen]
+        offset += rdlen
+        if rtype == 1 and rdlen == 4:           # A
+            rrs.append({'name': name, 'type': 'A',  'ttl': ttl, 'value': '.'.join(str(b) for b in rdata)})
+        elif rtype == 2:                         # NS
+            ns, _ = _dns_decode_name(data, rdata_offset)
+            rrs.append({'name': name, 'type': 'NS', 'ttl': ttl, 'value': ns})
+        else:
+            rrs.append({'name': name, 'type': rtype, 'ttl': ttl, 'value': rdata.hex()})
+    return rrs, offset
+
+
+def _dns_query(server_ip: str, name: str, timeout: float = 2.0) -> dict:
+    """Send a DNS A-record query; return parsed response dict."""
+    tx_id = random.randint(0, 65535)
+    flags = 0x0100                           # standard query, RD=0 (we do iteration ourselves)
+    encoded = _dns_encode_name(name)
+    header   = struct.pack('!HHHHHH', tx_id, flags, 1, 0, 0, 0)
+    question = encoded + struct.pack('!HH', 1, 1)  # QTYPE=A, QCLASS=IN
+    query = header + question
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.settimeout(timeout)
+    try:
+        t0 = _time.monotonic()
+        sock.sendto(query, (server_ip, 53))
+        data, _ = sock.recvfrom(1024)
+        rtt_ms = round((_time.monotonic() - t0) * 1000, 1)
+    finally:
+        sock.close()
+
+    hdr = struct.unpack_from('!HHHHHH', data, 0)
+    resp_flags = hdr[1]
+    aa     = bool((resp_flags >> 10) & 1)
+    rcode  = resp_flags & 0xF
+    qdcount, ancount, nscount, arcount = hdr[2], hdr[3], hdr[4], hdr[5]
+
+    offset = 12
+    for _ in range(qdcount):                 # skip question section
+        _, offset = _dns_decode_name(data, offset)
+        offset += 4
+
+    answers,    offset = _dns_parse_rrs(data, offset, ancount)
+    authority,  offset = _dns_parse_rrs(data, offset, nscount)
+    additional, _      = _dns_parse_rrs(data, offset, arcount)
+    return {
+        'aa': aa, 'rcode': rcode, 'rtt_ms': rtt_ms,
+        'answers': answers, 'authority': authority, 'additional': additional,
+    }
+
+
+def _dns_iterative_trace(name: str) -> List[dict]:
+    """Walk the DNS hierarchy root → TLD → auth, recording each hop."""
+    steps: List[dict] = []
+    server_ip   = DNS_ROOT
+    server_label = f'Root nameserver ({DNS_ROOT})'
+
+    for _ in range(6):
+        step: dict = {'server': server_label, 'server_ip': server_ip, 'query': f'{name} A?'}
+        try:
+            r = _dns_query(server_ip, name)
+        except Exception as e:
+            step['error'] = str(e)
+            steps.append(step)
+            break
+
+        step['rtt_ms']    = r['rtt_ms']
+        step['aa']        = r['aa']
+        step['rcode']     = r['rcode']
+        step['answers']   = r['answers']
+        step['authority'] = r['authority']
+        step['additional']= r['additional']
+
+        if r['answers']:
+            step['result'] = 'ANSWER'
+            steps.append(step)
+            break
+
+        # Referral — follow the first NS with glue
+        ns_rrs = [x for x in r['authority'] if x['type'] == 'NS']
+        glue   = {x['name']: x['value'] for x in r['additional'] if x['type'] == 'A'}
+
+        if not ns_rrs:
+            step['result'] = 'NXDOMAIN' if r['rcode'] == 3 else 'NO_NS'
+            steps.append(step)
+            break
+
+        ns_name = ns_rrs[0]['value']
+        next_ip = glue.get(ns_name) or glue.get(ns_name.rstrip('.') + '.')
+        if not next_ip:
+            step['result'] = f'REFERRAL (no glue for {ns_name})'
+            steps.append(step)
+            break
+
+        step['result'] = f'REFERRAL → {ns_name} ({next_ip})'
+        steps.append(step)
+        server_ip    = next_ip
+        server_label = f'{ns_name} ({next_ip})'
+
+    return steps
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -55,7 +203,7 @@ async def api_status():
     connected = sum(1 for c in clients.values() if not c.get('submitted'))
 
     return {
-        "server_now_ms":   int(time.time() * 1000),
+        "server_now_ms":   int(_time.time() * 1000),
         "start_at_ms":     start_at_ms,
         "total_clients":   len(clients),
         "connected_count": connected,
@@ -122,6 +270,20 @@ async def upload_exam(file: UploadFile = File(...)):
     SHARED_DIR.mkdir(parents=True, exist_ok=True)
     (SHARED_DIR / 'exam.json').write_bytes(data)
     return {"ok": True, "exam_id": parsed.get("exam_id"), "questions": len(parsed.get("questions", []))}
+
+
+@app.get("/api/dns/trace")
+async def dns_trace(name: str = "server.exam.lan"):
+    """Perform iterative DNS resolution and return each hop's details."""
+    import asyncio
+    loop = asyncio.get_running_loop()
+    steps = await loop.run_in_executor(None, _dns_iterative_trace, name)
+    # Collect final A records
+    answers = []
+    for step in steps:
+        if step.get('answers'):
+            answers = step['answers']
+    return {"name": name, "steps": steps, "final_answers": answers}
 
 
 # ── Dashboard HTML ────────────────────────────────────────────────────────────
@@ -243,6 +405,7 @@ pre{background:#161b22;border:1px solid #30363d;border-radius:6px;padding:16px;f
   <div class="tab active" onclick="switchTab('sync')">סנכרון זמן</div>
   <div class="tab" onclick="switchTab('monitor')">מעקב בזמן אמת</div>
   <div class="tab" onclick="switchTab('submissions')">הגשות</div>
+  <div class="tab" onclick="switchTab('dns')">🌐 DNS Trace</div>
   <div class="tab" onclick="switchTab('upload')">העלאת שאלון</div>
 </nav>
 
@@ -257,12 +420,14 @@ pre{background:#161b22;border:1px solid #30363d;border-radius:6px;padding:16px;f
     <table id="sync-table">
       <thead><tr>
         <th>מזהה לקוח</th>
-        <th>T₀ רשמי (ms)</th>
-        <th>פתיחה בפועל (ms)</th>
-        <th>Δ מ-T₀</th>
+        <th>T₀ רשמי</th>
+        <th>נפתח אצל הלקוח</th>
+        <th>Δ פתיחה מ-T₀</th>
+        <th>לחץ "התחל"</th>
+        <th>Δ עד לחיצה</th>
         <th>סטטוס</th>
       </tr></thead>
-      <tbody id="sync-body"><tr><td colspan="5" class="empty">טוען נתונים...</td></tr></tbody>
+      <tbody id="sync-body"><tr><td colspan="7" class="empty">טוען נתונים...</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -293,7 +458,24 @@ pre{background:#161b22;border:1px solid #30363d;border-radius:6px;padding:16px;f
   <div id="submissions-wrap"><p class="empty">טוען...</p></div>
 </div>
 
-<!-- ── Tab 4: Upload ── -->
+<!-- ── Tab 4: DNS Trace ── -->
+<div id="panel-dns" class="panel">
+  <div class="section-title">DNS Trace — מעקב אחר פתרון שמות</div>
+  <div class="section-sub">
+    מבצע resolution איטרטיבי ידני: Root → TLD (.lan) → Authoritative (exam.lan) → תשובה.
+    מדגים כי הלקוחות משתמשים בהיררכיית ה-DNS שבנינו ומקבלים round-robin load balancing.
+  </div>
+
+  <div style="display:flex;gap:10px;margin-top:16px;align-items:center">
+    <input id="dns-name" type="text" value="server.exam.lan"
+      style="flex:1;padding:9px 12px;border:1px solid #30363d;border-radius:6px;background:#161b22;color:#c9d1d9;font-family:monospace;font-size:.9rem"/>
+    <button class="btn btn-primary" onclick="runDnsTrace()" id="dns-run-btn">▶ הרץ Lookup</button>
+  </div>
+
+  <div id="dns-result" style="margin-top:20px"></div>
+</div>
+
+<!-- ── Tab 5: Upload ── -->
 <div id="panel-upload" class="panel">
   <div class="section-title">העלאת שאלון חדש</div>
   <div class="section-sub">
@@ -351,7 +533,7 @@ let activeTab = 'sync';
 
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach((t,i) => {
-    const tabs = ['sync','monitor','submissions','upload'];
+    const tabs = ['sync','monitor','submissions','dns','upload'];
     t.classList.toggle('active', tabs[i] === name);
   });
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -359,6 +541,92 @@ function switchTab(name) {
   activeTab = name;
   if (name === 'submissions') loadSubmissions();
   if (name === 'upload') loadExamPreview();
+}
+
+// ── DNS Trace ─────────────────────────────────────────────────────────────────
+
+async function runDnsTrace() {
+  const name = document.getElementById('dns-name').value.trim() || 'server.exam.lan';
+  const btn  = document.getElementById('dns-run-btn');
+  const out  = document.getElementById('dns-result');
+  btn.disabled = true;
+  btn.textContent = '⏳ מריץ...';
+  out.innerHTML = '<p style="color:#8b949e">מבצע iterative DNS resolution...</p>';
+  try {
+    const r = await fetch('/api/dns/trace?name=' + encodeURIComponent(name));
+    const d = await r.json();
+    renderDnsTrace(d, out);
+  } catch(e) {
+    out.innerHTML = `<p style="color:#f85149">שגיאה: ${e}</p>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '▶ הרץ Lookup';
+  }
+}
+
+function renderDnsTrace(data, container) {
+  const rcode_name = {0:'NOERROR',1:'FORMERR',2:'SERVFAIL',3:'NXDOMAIN',5:'REFUSED'};
+  let html = `<div style="margin-bottom:16px">
+    <span style="font-family:monospace;font-size:1rem;color:#f0f6fc;font-weight:700">${data.name}</span>
+    <span style="color:#8b949e;margin:0 8px">→</span>
+    ${data.final_answers.length
+      ? data.final_answers.map(a => `<span style="display:inline-block;margin:2px 4px;padding:3px 10px;background:#1a3a1a;color:#3fb950;border-radius:6px;font-family:monospace">${a.value}</span>`).join('')
+      : '<span style="color:#f85149">לא נפתר</span>'}
+  </div>`;
+
+  data.steps.forEach((step, i) => {
+    const isAnswer   = step.result === 'ANSWER';
+    const isReferral = step.result && step.result.startsWith('REFERRAL');
+    const borderColor = isAnswer ? '#3fb950' : isReferral ? '#58a6ff' : '#f85149';
+    const stepLabel   = isAnswer ? '✅ ANSWER' : isReferral ? '↪ REFERRAL' : step.result || '?';
+
+    html += `<div style="margin-bottom:12px;border:1px solid #30363d;border-right:3px solid ${borderColor};border-radius:0 8px 8px 0;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#161b22">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="width:22px;height:22px;border-radius:50%;background:#30363d;display:grid;place-items:center;font-size:.8rem;font-weight:700;color:#8b949e">${i+1}</span>
+          <span style="font-family:monospace;font-size:.875rem;color:#c9d1d9">${step.server}</span>
+          <span style="font-size:.8rem;color:#8b949e">← ${step.query}</span>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          ${step.rtt_ms != null ? `<span style="font-family:monospace;font-size:.75rem;color:#8b949e">${step.rtt_ms} ms</span>` : ''}
+          ${step.aa ? `<span class="tag" style="background:#1a3a1a;color:#3fb950">AA</span>` : ''}
+          <span style="font-size:.8rem;font-weight:600;color:${borderColor}">${stepLabel}</span>
+        </div>
+      </div>
+      <div style="padding:10px 14px;background:#0d1117;font-family:monospace;font-size:.8rem">`;
+
+    if (step.error) {
+      html += `<div style="color:#f85149">שגיאה: ${step.error}</div>`;
+    } else {
+      if (step.answers?.length) {
+        html += `<div style="color:#8b949e;margin-bottom:4px">ANSWER:</div>`;
+        step.answers.forEach(a => {
+          html += `<div style="color:#3fb950">  ${a.name} &nbsp; ${a.type} &nbsp; TTL=${a.ttl} &nbsp; <strong>${a.value}</strong></div>`;
+        });
+      }
+      if (step.authority?.length) {
+        html += `<div style="color:#8b949e;margin-top:6px;margin-bottom:4px">AUTHORITY:</div>`;
+        step.authority.forEach(a => {
+          html += `<div style="color:#58a6ff">  ${a.name} &nbsp; ${a.type} &nbsp; ${a.value}</div>`;
+        });
+      }
+      if (step.additional?.length) {
+        html += `<div style="color:#8b949e;margin-top:6px;margin-bottom:4px">ADDITIONAL (glue):</div>`;
+        step.additional.forEach(a => {
+          html += `<div style="color:#d29922">  ${a.name} &nbsp; ${a.type} &nbsp; <strong>${a.value}</strong></div>`;
+        });
+      }
+    }
+    html += `</div></div>`;
+  });
+
+  // Arrow-diagram summary
+  html += `<div style="margin-top:16px;padding:14px;background:#161b22;border:1px solid #30363d;border-radius:8px;font-family:monospace;font-size:.82rem;color:#8b949e">
+    <div style="color:#f0f6fc;font-weight:700;margin-bottom:8px">מסלול Resolution:</div>
+    Client → Resolver (10.99.0.2) → Root (10.99.0.10) → TLD/lan (10.99.0.11) → Auth/exam.lan (10.99.0.12) → ${data.final_answers.map(a=>a.value).join(' / ')}
+  </div>`;
+
+  container.innerHTML = html;
 }
 
 // ── Header clock ──────────────────────────────────────────────────────────────
@@ -418,22 +686,28 @@ async function loadSyncTable() {
     const tbody = document.getElementById('sync-body');
     const rows = Object.entries(clients);
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty">אין לקוחות מחוברים עדיין</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">אין לקוחות מחוברים עדיין</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map(([cid, c]) => {
-      const started = c.exam_started_at;
-      const delta = (t0 && started) ? (started - t0) : null;
+      const opened  = c.exam_opened_at;        // when exam became visible to client (≈ T₀)
+      const started = c.student_started_at;    // when student clicked "Start"
+      const deltaOpen  = (t0 && opened)  ? (opened  - t0)      : null;  // Δ from T₀ to exam open
+      const deltaStart = (opened && started) ? (started - opened) : null; // Δ from open to click
       const status = c.submitted
         ? '<span class="tag tag-ok">הגיש</span>'
         : started
-          ? '<span class="tag tag-wait">בבחינה</span>'
-          : '<span style="color:#8b949e">ממתין</span>';
+          ? '<span class="tag tag-wait">עונה</span>'
+          : opened
+            ? '<span class="tag" style="background:#2d1f3d;color:#c792e9">נפתח — לא התחיל</span>'
+            : '<span style="color:#8b949e">ממתין</span>';
       return `<tr>
         <td class="mono">${cid}</td>
         <td class="mono">${t0 ? fmtMs(t0) : '—'}</td>
+        <td class="mono">${opened  ? fmtMs(opened)  : '—'}</td>
+        <td>${fmtDelta(deltaOpen)}</td>
         <td class="mono">${started ? fmtMs(started) : '—'}</td>
-        <td>${fmtDelta(delta)}</td>
+        <td>${deltaStart !== null ? `<span class="mono" style="color:#8b949e">+${deltaStart} ms</span>` : '—'}</td>
         <td>${status}</td>
       </tr>`;
     }).join('');

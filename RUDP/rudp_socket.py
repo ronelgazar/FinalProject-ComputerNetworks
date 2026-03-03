@@ -70,6 +70,10 @@ class RudpSocket:
         # Retransmit task
         self._retransmit_task: Optional[asyncio.Task] = None
 
+        # RTT tracking
+        self.handshake_rtt_ms: float = 0.0   # SYN → SYN-ACK round-trip time
+        self.rtt_ms: float = 50.0             # EWMA RTT, updated per ACK
+
     # ── Internal send ─────────────────────────────────────────────────────
     def _send_raw(self, pkt: RudpPacket):
         data = pkt.to_bytes()
@@ -155,9 +159,12 @@ class RudpSocket:
             return
 
         if pkt.is_ack():
-            # Remove all send_buf entries with seq <= pkt.ack
+            # Remove all send_buf entries with seq <= pkt.ack, measure RTT
             done = [s for s in self._send_buf if s < pkt.ack]
             for s in done:
+                _, t_sent, _ = self._send_buf[s]
+                sample_ms = (time.monotonic() - t_sent) * 1000
+                self.rtt_ms = 0.875 * self.rtt_ms + 0.125 * sample_ms
                 del self._send_buf[s]
             self._ack_event.set()
 
@@ -315,7 +322,8 @@ async def rudp_connect(host: str, port: int) -> RudpSocket:
     conn = RudpSocket(transport, (host, port), loop)
     cs._conn = conn
 
-    # Send SYN
+    # Send SYN — record time for handshake RTT measurement
+    t_syn = time.monotonic()
     syn = RudpPacket(seq=conn._send_seq, ack=0, flags=SYN, window=WINDOW_SIZE)
     conn._send_seq += 1
     transport.sendto(syn.to_bytes())
@@ -326,4 +334,7 @@ async def rudp_connect(host: str, port: int) -> RudpSocket:
         transport.close()
         raise RudpTimeout("Connect timeout")
 
+    conn.handshake_rtt_ms = (time.monotonic() - t_syn) * 1000
+    conn.rtt_ms = conn.handshake_rtt_ms   # seed EWMA with handshake measurement
+    log.info("Handshake RTT to %s:%d = %.1f ms", host, port, conn.handshake_rtt_ms)
     return conn
