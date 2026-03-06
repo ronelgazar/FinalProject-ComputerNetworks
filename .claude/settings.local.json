@@ -6,7 +6,9 @@
       "Bash(npx tsc:*)",
       "Bash(python:*)",
       "Bash(pip install:*)",
-      "Bash(docker compose:*)"
+      "Bash(docker compose:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker exec:*)"
     ]
   }
 }

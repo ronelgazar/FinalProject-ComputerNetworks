@@ -179,7 +179,7 @@ tr:hover td{background:#0f172a}
     <div class="card">
       <div class="card-title">⚡ Network Interference Simulator</div>
       <div style="font-size:11px;color:#475569;margin-bottom:12px">
-        Uses <code style="color:#60a5fa">tc netem</code> inside each client container to inject real network conditions
+        Software delay/jitter/loss applied by <code style="color:#60a5fa">ws_bridge.py</code> via <code style="color:#60a5fa">/tmp/netem_delay.json</code>
       </div>
 
       <!-- Client 1 -->
@@ -811,39 +811,21 @@ def _api_get(path: str) -> Any:
         return {}
 
 # ─────────────────────────────────────────────────────────────────────────────
-# tc netem
+# Software netem (writes /tmp/netem_delay.json inside container)
+# ws_bridge.py reads this file and applies delay/jitter/loss in Python —
+# no kernel sch_netem module required (works on Docker Desktop for Windows/Mac).
 # ─────────────────────────────────────────────────────────────────────────────
-def _get_iface(container: str) -> str:
-    """Get the default network interface inside the container."""
-    try:
-        r = _sh(["docker", "exec", container, "sh", "-c",
-                 "ip route show default | head -1 | awk '{print $5}'"])
-        iface = r.stdout.strip()
-        return iface if iface else "eth0"
-    except Exception:
-        return "eth0"
-
 def apply_netem(container: str, delay_ms: int, jitter_ms: int, loss_pct: float) -> str:
-    iface = _get_iface(container)
-
-    # Build netem parameters
-    parts = []
-    if delay_ms > 0:
-        parts.append(f"delay {delay_ms}ms")
-        if jitter_ms > 0:
-            parts.append(f"{jitter_ms}ms")
-    if loss_pct > 0:
-        parts.append(f"loss {loss_pct}%")
-
-    # Delete existing root qdisc, then add fresh netem (or pfifo if clearing)
-    _sh(["docker", "exec", container, "tc", "qdisc", "del", "dev", iface, "root"])
-
-    if parts:
-        cmd = ["docker", "exec", container, "tc", "qdisc", "add", "dev", iface,
-               "root", "netem"] + " ".join(parts).split()
-        r = _sh(cmd)
-        if r.returncode != 0:
-            return r.stderr.strip() or "tc netem failed"
+    payload = json.dumps({"delay_ms": delay_ms,
+                          "jitter_ms": jitter_ms,
+                          "loss_pct": loss_pct})
+    py_cmd = (
+        f"import pathlib, json; "
+        f"pathlib.Path('/tmp/netem_delay.json').write_text({payload!r})"
+    )
+    r = _sh(["docker", "exec", container, "python3", "-c", py_cmd])
+    if r.returncode != 0:
+        return r.stderr.strip() or "failed to write netem file"
     return ""   # success
 
 # ─────────────────────────────────────────────────────────────────────────────

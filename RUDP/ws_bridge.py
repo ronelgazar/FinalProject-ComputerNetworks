@@ -41,11 +41,17 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-LISTEN_HOST     = os.environ.get('BRIDGE_HOST', '0.0.0.0')
-LISTEN_PORT     = int(os.environ.get('BRIDGE_PORT', '8081'))
-RUDP_SERVER_HOST= os.environ.get('RUDP_SERVER_HOST', 'server.exam.lan')
-RUDP_SERVER_PORT= int(os.environ.get('RUDP_SERVER_PORT', '9000'))
-DNS_RESOLVER    = os.environ.get('DNS_RESOLVER', '10.99.0.2')
+LISTEN_HOST      = os.environ.get('BRIDGE_HOST', '0.0.0.0')
+LISTEN_PORT      = int(os.environ.get('BRIDGE_PORT', '8081'))
+RUDP_SERVER_HOST = os.environ.get('RUDP_SERVER_HOST', 'server.exam.lan')
+RUDP_SERVER_PORT = int(os.environ.get('RUDP_SERVER_PORT', '9000'))
+DNS_RESOLVER     = os.environ.get('DNS_RESOLVER', '10.99.0.2')
+
+# Packet types that receive synchronized delivery treatment.
+# time_resp is intentionally excluded — it is timing-sensitive for NTP
+# and must be forwarded immediately to keep offset measurements accurate.
+SYNC_PACKET_TYPES = {'exam_resp', 'schedule_resp'}
+JITTER_BUFFER_MS  = 30
 
 # ── Software netem (professor dashboard writes /tmp/netem_delay.json) ─────────
 _NETEM_FILE  = pathlib.Path('/tmp/netem_delay.json')
@@ -108,21 +114,20 @@ def _resolve_server() -> tuple[str, list[str]]:
     return ip, all_ips
 
 
-async def _ws_to_rudp(ws, rudp):
+async def _ws_to_rudp(ws, rudp, state: dict):
     """Forward WebSocket frames → RUDP, injecting RTT into 'hello' messages."""
     async for message in ws:
         try:
             if isinstance(message, str):
-                # Intercept 'hello' to inject current RUDP RTT measurement
                 try:
                     obj = json.loads(message)
                     if obj.get('type') == 'hello':
-                        obj['rtt_ms'] = round(rudp.rtt_ms, 2)
+                        obj['rtt_ms']           = round(rudp.rtt_ms, 2)
                         obj['handshake_rtt_ms'] = round(rudp.handshake_rtt_ms, 2)
                         message = json.dumps(obj)
                         log.info("Injected rtt_ms=%.1f into hello", rudp.rtt_ms)
                 except Exception:
-                    pass   # not JSON or not hello — forward as-is
+                    pass
                 await rudp.send(message.encode('utf-8'))
             else:
                 await rudp.send(message)
@@ -131,15 +136,28 @@ async def _ws_to_rudp(ws, rudp):
             break
 
 
-async def _rudp_to_ws(ws, rudp):
+async def _rudp_to_ws(ws, rudp, state: dict):
     """
-    Forward RUDP messages → WebSocket.
+    Forward RUDP messages → WebSocket with two-layer timing control.
 
-    Two layers of delay are applied in sequence:
-    1. Software netem (professor-controlled): delay + jitter + loss.
-       Written to /tmp/netem_delay.json by the professor dashboard.
-    2. Synchronized delivery (server-controlled): deliver_delay_ms.
-       Ensures all clients receive exam packets at the same wall-clock time.
+    Layer 1 — Software netem (professor dashboard):
+      Reads /tmp/netem_delay.json; applies delay + jitter + optional loss.
+
+    Layer 2 — Self-correcting synchronized delivery:
+      For content packets (exam_resp, schedule_resp) the bridge computes:
+
+        target_ms = server_sent_at_ms + max_rtt/2 + JITTER_BUFFER_MS
+        hold_ms   = target_ms - time.now()
+
+      Because every container on the same Docker host shares the same clock,
+      server_sent_at_ms and time.now() are in the same reference frame.
+
+      Self-correction property: if RUDP retransmission delayed the packet
+      by Δ ms, time.now() has already advanced by Δ, so hold_ms shrinks
+      by exactly Δ — guaranteeing all clients still hit target_ms.
+
+      The bridge also stamps bridge_forwarded_at_ms and sync_hold_ms onto
+      the forwarded packet so the browser can display the proof.
     """
     while not rudp._closed:
         try:
@@ -149,24 +167,56 @@ async def _rudp_to_ws(ws, rudp):
             text = data.decode('utf-8')
             try:
                 obj = json.loads(text)
+                pkt_type = obj.get('type', '?')
 
-                # 1. Software netem — applied first (simulates network path)
+                # ── Layer 1: software netem ───────────────────────────────
                 dropped = await _netem_delay()
                 if dropped:
-                    log.info("netem: dropped %s packet (loss simulation)",
-                             obj.get('type', '?'))
+                    log.info("netem: dropped %s (loss simulation)", pkt_type)
                     continue
 
-                # 2. Synchronized delivery — applied second (server-stamped)
-                sync_delay_ms = obj.get('deliver_delay_ms', 0)
-                if sync_delay_ms > 0:
-                    log.info("Holding %s for %.0f ms (sync delay)",
-                             obj.get('type', '?'), sync_delay_ms)
-                    await asyncio.sleep(sync_delay_ms / 1000.0)
+                # ── Layer 2: synchronized delivery ────────────────────────
+                if (pkt_type in SYNC_PACKET_TYPES
+                        and 'server_sent_at_ms' in obj
+                        and state['max_rtt_ms'] > 0):
+                    # Update per-connection sync state from schedule_resp
+                    if pkt_type == 'schedule_resp':
+                        state['max_rtt_ms'] = float(obj.get('max_rtt_ms', state['max_rtt_ms']))
+                        state['my_rtt_ms']  = float(obj.get('my_rtt_ms',  rudp.rtt_ms))
+                        log.info("Sync state updated: max_rtt=%.1f my_rtt=%.1f",
+                                 state['max_rtt_ms'], state['my_rtt_ms'])
+
+                    target_ms  = (obj['server_sent_at_ms']
+                                  + state['max_rtt_ms'] / 2
+                                  + JITTER_BUFFER_MS)
+                    hold_ms    = target_ms - time.time() * 1000
+                    actual_hold = max(0.0, hold_ms)
+
+                    if actual_hold > 0:
+                        log.info("Sync hold %.1f ms for %s  "
+                                 "(target=%.0f retransmission_absorbed=%.1f ms)",
+                                 actual_hold, pkt_type,
+                                 target_ms, max(0.0, -hold_ms))
+                        await asyncio.sleep(actual_hold / 1000.0)
+
+                    obj['bridge_forwarded_at_ms'] = int(time.time() * 1000)
+                    obj['sync_hold_ms']           = round(actual_hold, 2)
+                    obj['sync_target_ms']         = round(target_ms, 2)
+
+                elif 'deliver_delay_ms' in obj and obj['deliver_delay_ms'] > 0:
+                    # Fallback for schedule_resp before max_rtt_ms is known
+                    await asyncio.sleep(obj['deliver_delay_ms'] / 1000.0)
+                    obj['bridge_forwarded_at_ms'] = int(time.time() * 1000)
+                    obj['sync_hold_ms']           = obj['deliver_delay_ms']
+
+                # Update sync state from schedule_resp even in fallback path
+                if pkt_type == 'schedule_resp':
+                    state['max_rtt_ms'] = float(obj.get('max_rtt_ms', state['max_rtt_ms']))
+                    state['my_rtt_ms']  = float(obj.get('my_rtt_ms',  rudp.rtt_ms))
 
                 await ws.send(json.dumps(obj))
+
             except (ValueError, TypeError):
-                # Not JSON — still apply netem, then forward raw
                 dropped = await _netem_delay()
                 if not dropped:
                     await ws.send(text)
@@ -187,7 +237,12 @@ async def handle_ws(ws):
         log.info("RUDP connected to %s:%d  handshake_rtt=%.1f ms",
                  server_ip, RUDP_SERVER_PORT, rudp.handshake_rtt_ms)
 
-        # Tell the browser which server was selected via DNS and measured RTT
+        # Per-connection sync state — populated from schedule_resp
+        state = {
+            'max_rtt_ms': 0.0,
+            'my_rtt_ms':  rudp.rtt_ms,
+        }
+
         await ws.send(json.dumps({
             "type":             "connection_info",
             "dns_hostname":     RUDP_SERVER_HOST,
@@ -201,7 +256,7 @@ async def handle_ws(ws):
         log.error("Failed to connect RUDP: %s", e)
         try:
             await ws.send(json.dumps({
-                "type": "error",
+                "type":    "error",
                 "message": f"Bridge could not connect to exam server: {e}",
             }))
         except Exception:
@@ -210,8 +265,8 @@ async def handle_ws(ws):
 
     try:
         await asyncio.gather(
-            _ws_to_rudp(ws, rudp),
-            _rudp_to_ws(ws, rudp),
+            _ws_to_rudp(ws, rudp, state),
+            _rudp_to_ws(ws, rudp, state),
             return_exceptions=True,
         )
     finally:

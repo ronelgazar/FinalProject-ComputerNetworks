@@ -38,41 +38,92 @@ _EXAM_START_AT_MS: Optional[int] = (
 )
 
 # ── Per-packet synchronized delivery ─────────────────────────────────────────
-# Strategy: server stamps each content packet with deliver_delay_ms.
-# Fast clients (low RTT) wait longer; slow clients get it immediately.
-# Result: all clients receive the packet at the same wall-clock moment.
+#
+# Two complementary mechanisms work together:
+#
+# A) Server-side staggered sends (primary — friend's formula):
+#    For each client i, compute a conservative one-way delay estimate D_i:
+#      RTT_med_i = median of 3 RTT samples (min/med/max from 12 NTP rounds)
+#      J_rtt_i   = max - min  (jitter estimate from 3 samples)
+#      D_i       = (RTT_med_i + J_rtt_i) / 2   (conservative one-way delay)
+#    Choose target arrival time:
+#      T_arr = now + max(D_i) + N*C + M
+#        N = number of clients, C = per-send overhead, M = scheduling margin
+#    Each client gets send time:
+#      T_send[i] = T_arr - D_i
+#    Sort clients by T_send ascending (= highest D first) and send in that order,
+#    sleeping Δ_k = max(0, T_send[k+1] - T_send[k] - C) between consecutive sends.
+#
+# B) Bridge-side fine-tuning (secondary — self-correcting):
+#    The bridge uses server_sent_at_ms to compute remaining hold dynamically,
+#    absorbing any RUDP retransmission delay that already occurred.
 
-_client_rtts: Dict[str, float] = {}   # client_id → EWMA RTT in ms
+_client_rtts: Dict[str, float] = {}             # client_id → RTT in ms (from hello)
+_client_rtt_samples: Dict[str, list] = {}        # client_id → [min, med, max] from NTP
+_client_offsets: Dict[str, float] = {}           # client_id → NTP clock offset (ms)
 _rtt_lock = asyncio.Lock()
-JITTER_BUFFER_MS = 30                  # extra slack on top of max RTT
+JITTER_BUFFER_MS = 30
+
+# Send overhead estimate per client (ms) and scheduling margin (ms)
+C_SEND_MS        = 1.0
+M_MARGIN_MS      = 15.0
+COLLECTION_WINDOW_SEC = 1.5   # how long to wait for all exam_req before scheduling
 
 
-async def _register_client_rtt(client_id: str, rtt_ms: float):
+async def _register_client_rtt(client_id: str, rtt_ms: float,
+                                rtt_samples: Optional[list] = None,
+                                offset_ms: Optional[float] = None):
     async with _rtt_lock:
         _client_rtts[client_id] = rtt_ms
-    log.info("RTT registry: client=%s rtt=%.1fms  all=%s",
-             client_id, rtt_ms,
-             {k: round(v, 1) for k, v in _client_rtts.items()})
+        if rtt_samples and len(rtt_samples) >= 3:
+            _client_rtt_samples[client_id] = sorted(rtt_samples[:3])
+        if offset_ms is not None:
+            _client_offsets[client_id] = offset_ms
+    log.info("RTT registry: client=%s rtt=%.1fms samples=%s offset=%.2fms",
+             client_id, rtt_ms, rtt_samples, offset_ms if offset_ms is not None else 0.0)
 
 
 def _get_max_rtt_ms() -> float:
     return max(_client_rtts.values(), default=100.0)
 
 
+def _compute_D(client_id: Optional[str]) -> float:
+    """
+    Conservative one-way delay estimate for a client.
+
+    When fresh NTP offset data is available (from the pre-exam refresh):
+      d_down = RTT_med / 2 - offset_ms
+      J_rtt  = max(r1,r2,r3) - min(...)
+      D_i    = d_down + J_rtt / 2   (asymmetric-corrected estimate)
+
+    Without offset data (friend's formula):
+      RTT_med = median(r1, r2, r3)
+      J_rtt   = max - min
+      D_i     = (RTT_med + J_rtt) / 2
+
+    Falls back to rtt_ms/2 if no 3-sample data is available.
+    """
+    if not client_id:
+        return 50.0
+    if client_id in _client_rtt_samples:
+        s = sorted(_client_rtt_samples[client_id])
+        rtt_med = s[len(s) // 2]
+        j_rtt   = s[-1] - s[0]
+        offset  = _client_offsets.get(client_id)
+        if offset is not None:
+            # Asymmetric correction: d_down = RTT/2 - offset
+            d_down = rtt_med / 2.0 - offset
+            D = max(1.0, d_down + j_rtt / 2.0)
+            log.debug("D_i for %s: rtt_med=%.1f offset=%.2f d_down=%.2f j=%.1f → D=%.1f",
+                      client_id, rtt_med, offset, d_down, j_rtt, D)
+            return D
+        return (rtt_med + j_rtt) / 2.0
+    rtt = _client_rtts.get(client_id, 100.0)
+    return rtt / 2.0   # fallback
+
+
 def _deliver_delay_ms(client_id: Optional[str]) -> int:
-    """
-    How many ms this client's bridge should hold the packet before forwarding.
-
-    Derivation (assuming symmetric RTT):
-      - Server sends packet at T_send.
-      - Bridge receives it at T_send + rtt/2  (one-way latency).
-      - We want every client's browser to receive at T_send + max_rtt/2 + BUFFER.
-      - Therefore: deliver_delay = (max_rtt - my_rtt) / 2 + BUFFER
-
-    The slowest client waits only BUFFER ms; the fastest client waits
-    (max_rtt - my_rtt)/2 + BUFFER, so all browsers see the packet at the
-    same wall-clock instant.
-    """
+    """Bridge-side hold for bridge self-correcting fallback (secondary mechanism)."""
     if not client_id or client_id not in _client_rtts:
         return 0
     max_rtt = _get_max_rtt_ms()
@@ -82,10 +133,91 @@ def _deliver_delay_ms(client_id: Optional[str]) -> int:
 
 
 def _relay_candidate() -> Optional[str]:
-    """Client with lowest RTT — best relay candidate for future optimisation."""
     if len(_client_rtts) < 2:
         return None
     return min(_client_rtts, key=lambda k: _client_rtts[k])
+
+
+# ── Exam send coordinator (staggered sends) ───────────────────────────────────
+
+class ExamSendCoordinator:
+    """
+    Collects D_i values from all arriving exam_req handlers,
+    then computes a staggered send schedule so all clients receive
+    the exam at the same wall-clock moment T_arr.
+    """
+
+    def __init__(self):
+        self._registry: Dict[str, float] = {}   # {client_id: D_i}
+        self._t_sends:  Dict[str, float] = {}   # {client_id: T_send_ms}
+        self._event   = asyncio.Event()
+        self._task: Optional[asyncio.Task] = None
+        self._lock    = asyncio.Lock()
+
+    def reset(self):
+        """Reset for a new exam session (called on schedule_req)."""
+        self._registry.clear()
+        self._t_sends.clear()
+        self._event.clear()
+        self._task = None
+
+    async def register(self, client_id: str, D_i: float):
+        """Register client's D_i and ensure coordinator task is running."""
+        async with self._lock:
+            self._registry[client_id] = D_i
+            if self._task is None or self._task.done():
+                self._task = asyncio.create_task(self._coordinate())
+
+    async def wait_t_send(self, client_id: str) -> float:
+        """Block until the coordinator has set T_send for this client."""
+        await self._event.wait()
+        return self._t_sends.get(client_id, time.time() * 1000)
+
+    async def _coordinate(self):
+        """
+        Wait COLLECTION_WINDOW_SEC for all exam_req to arrive, then compute:
+
+          T_arr     = now + max(D_i) + N*C + M
+          T_send[i] = T_arr - D_i     (higher D → earlier send)
+
+        Stagger Δ_k = max(0, T_send[k+1] - T_send[k] - C) between sends.
+        """
+        await asyncio.sleep(COLLECTION_WINDOW_SEC)
+
+        async with self._lock:
+            items = list(self._registry.items())   # [(client_id, D_i)]
+
+        if not items:
+            self._event.set()
+            return
+
+        now_ms  = time.time() * 1000
+        max_D   = max(d for _, d in items)
+        N       = len(items)
+        T_arr   = now_ms + max_D + N * C_SEND_MS + M_MARGIN_MS
+
+        # T_send[i] = T_arr - D_i  (slowest D first → smallest T_send → sent first)
+        for cid, D in items:
+            self._t_sends[cid] = T_arr - D
+
+        sorted_clients = sorted(items, key=lambda x: self._t_sends[x[0]])
+
+        log.info("ExamCoordinator: N=%d max_D=%.1f T_arr=+%.0f ms from now",
+                 N, max_D, T_arr - now_ms)
+        for i, (cid, D) in enumerate(sorted_clients):
+            t_send = self._t_sends[cid]
+            if i < len(sorted_clients) - 1:
+                next_t = self._t_sends[sorted_clients[i + 1][0]]
+                delta  = max(0.0, next_t - t_send - C_SEND_MS)
+            else:
+                delta = 0.0
+            log.info("  [%d] %s D=%.1fms T_send=+%.1fms Δ_next=%.1fms",
+                     i + 1, cid, D, t_send - now_ms, delta)
+
+        self._event.set()
+
+
+_coordinator = ExamSendCoordinator()
 
 # ── Exam content ──────────────────────────────────────────────────────────────
 
@@ -260,6 +392,8 @@ async def handle_connection(conn: RudpSocket):
                     submitted=False,
                     answers_count=0,
                 )
+                # Acknowledgement so client knows hello was received
+                await _send(conn, {"type": "hello_ack", "client_id": client_id})
 
             elif msg_type == 'time_req':
                 await _send(conn, {
@@ -269,9 +403,21 @@ async def handle_connection(conn: RudpSocket):
                 })
 
             elif msg_type == 'schedule_req':
+                # Extract 3-sample RTT data sent by the client after its NTP phase.
+                # These give better D_i than the RUDP handshake RTT alone.
+                rtt_samples = msg.get('rtt_samples')
+                if rtt_samples and len(rtt_samples) >= 3 and client_id:
+                    await _register_client_rtt(client_id,
+                                               rtt_samples[1],   # median as primary
+                                               rtt_samples,
+                                               offset_ms=msg.get('offset_ms'))
+                # Reset coordinator so it is fresh for the upcoming exam_req wave
+                _coordinator.reset()
+
                 start_ms = await _get_start_at_ms()
                 current_exam = _load_exam()
                 exam_id = current_exam['exam_id']
+                D       = _compute_D(client_id)
                 delay   = _deliver_delay_ms(client_id)
                 await _send(conn, {
                     "type":               "schedule_resp",
@@ -279,26 +425,71 @@ async def handle_connection(conn: RudpSocket):
                     "exam_id":            exam_id,
                     "start_at_server_ms": start_ms,
                     "duration_sec":       current_exam['duration_sec'],
-                    # Synchronized delivery metadata
+                    # Sync metadata (bridge fine-tuning + UI display)
                     "deliver_delay_ms":   delay,
                     "max_rtt_ms":         round(_get_max_rtt_ms(), 2),
                     "my_rtt_ms":          round(_client_rtts.get(client_id, 50.0) if client_id else 50.0, 2),
+                    "D_i":                round(D, 2),
                     "relay_candidate":    _relay_candidate(),
                 })
 
             elif msg_type == 'exam_req':
-                # Load fresh from disk so admin-uploaded exam takes effect
+                # ── Staggered send (friend's formula) ────────────────────
+                # Register this client's D_i in the coordinator.
+                # All exam_req handlers wait until the coordinator has seen
+                # all clients (COLLECTION_WINDOW_SEC), then each sleeps until
+                # its individual T_send time before sending the response.
+                #
+                # T_send[i] = T_arr - D_i
+                # T_arr = now + max(D_i) + N*C + M
+                #
+                # Clients with high D_i (slow/jittery) get T_send earlier;
+                # clients with low D_i (fast) get T_send later.
+                # Result: all browsers receive the exam at the same T_arr.
+
+                # ── Fresh RTT update (second NTP run, 5 s before T₀) ─────
+                # The browser re-runs 3 NTP rounds just before the exam starts
+                # and includes [min, med, max] rtt_samples + NTP offset_ms.
+                # Updating here gives the coordinator the most accurate D_i
+                # right when the staggered-send schedule is being computed.
+                fresh_samples = msg.get('rtt_samples')
+                fresh_offset  = msg.get('offset_ms')
+                if fresh_samples and len(fresh_samples) >= 3 and client_id:
+                    await _register_client_rtt(
+                        client_id,
+                        fresh_samples[1],          # median as primary RTT
+                        fresh_samples,
+                        offset_ms=fresh_offset,
+                    )
+                    log.info("exam_req: fresh RTT update for %s samples=%s offset=%s",
+                             client_id, fresh_samples, fresh_offset)
+
+                D = _compute_D(client_id)
+                await _coordinator.register(client_id or 'unknown', D)
+                t_send = await _coordinator.wait_t_send(client_id or 'unknown')
+
+                # Sleep until scheduled send time
+                wait_ms = t_send - time.time() * 1000
+                if wait_ms > 0:
+                    log.info("Stagger send: client=%s D=%.1fms waiting=%.1fms",
+                             client_id, D, wait_ms)
+                    await asyncio.sleep(wait_ms / 1000.0)
+
                 current_exam = _load_exam()
-                delay = _deliver_delay_ms(client_id)
+                delay        = _deliver_delay_ms(client_id)
                 await _send(conn, {
-                    "type":             "exam_resp",
-                    "req_id":           req_id,
-                    "exam":             current_exam,
-                    # Synchronized delivery — bridge holds this packet until
-                    # deliver_delay_ms elapses so all clients see exam at once
-                    "deliver_delay_ms": delay,
-                    "max_rtt_ms":       round(_get_max_rtt_ms(), 2),
-                    "my_rtt_ms":        round(_client_rtts.get(client_id, 50.0) if client_id else 50.0, 2),
+                    "type":              "exam_resp",
+                    "req_id":            req_id,
+                    "exam":              current_exam,
+                    # Primary: server already staggered the send time (D_i formula)
+                    # Secondary: bridge fine-tunes with self-correcting hold
+                    "deliver_delay_ms":  delay,
+                    "max_rtt_ms":        round(_get_max_rtt_ms(), 2),
+                    "my_rtt_ms":         round(_client_rtts.get(client_id, 50.0) if client_id else 50.0, 2),
+                    # Proof fields
+                    "D_i":               round(D, 2),
+                    "T_send_planned_ms": round(t_send, 2),
+                    "stagger_wait_ms":   round(max(0.0, wait_ms), 2),
                 })
                 if client_id:
                     # exam_opened_at = when the exam became visible to this client (≈ T₀)
@@ -369,6 +560,12 @@ async def handle_connection(conn: RudpSocket):
 
 
 async def _send(conn: RudpSocket, obj: dict):
+    # Stamp every outgoing packet with server wall-clock time.
+    # The bridge uses this to compute self-correcting hold times:
+    #   hold_ms = (server_sent_at_ms + max_rtt/2 + buffer) - time.now()
+    # Any in-flight delay (RUDP retransmission, queueing) is automatically
+    # compensated because time.now() will have already advanced by that amount.
+    obj['server_sent_at_ms'] = int(time.time() * 1000)
     data = json.dumps(obj).encode('utf-8')
     try:
         await conn.send(data)

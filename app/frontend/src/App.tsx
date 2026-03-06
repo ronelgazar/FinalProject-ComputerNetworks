@@ -62,10 +62,14 @@ type WSMessage =
   | { type: "hello"; client_id: string }
   | { type: "time_req"; req_id: string; client_t0_ms: number }
   | { type: "time_resp"; req_id: string; server_now_ms: number }
-  | { type: "schedule_req"; req_id: string }
-  | { type: "schedule_resp"; req_id: string; exam_id: string; start_at_server_ms: number; duration_sec: number }
-  | { type: "exam_req"; req_id: string; exam_id: string }
-  | { type: "exam_resp"; req_id: string; exam: ExamPayload }
+  | { type: "schedule_req"; req_id: string; rtt_samples?: number[]; offset_ms?: number }
+  | { type: "schedule_resp"; req_id: string; exam_id: string; start_at_server_ms: number; duration_sec: number;
+      deliver_delay_ms?: number; max_rtt_ms?: number; my_rtt_ms?: number; relay_candidate?: string | null;
+      server_sent_at_ms?: number; bridge_forwarded_at_ms?: number; sync_hold_ms?: number; sync_target_ms?: number }
+  | { type: "exam_req"; req_id: string; exam_id: string; rtt_samples?: number[]; offset_ms?: number }
+  | { type: "exam_resp"; req_id: string; exam: ExamPayload;
+      deliver_delay_ms?: number; max_rtt_ms?: number; my_rtt_ms?: number;
+      server_sent_at_ms?: number; bridge_forwarded_at_ms?: number; sync_hold_ms?: number; sync_target_ms?: number }
   | { type: "answers_save"; req_id: string; exam_id: string; answers: Answer[] }
   | { type: "answers_saved"; req_id: string; ok: true }
   | { type: "exam_begin"; req_id: string; exam_id: string; opened_at_ms: number }
@@ -224,6 +228,10 @@ export default function App() {
   const [syncDelivery, setSyncDelivery] = useState<{
     deliver_delay_ms: number; max_rtt_ms: number; my_rtt_ms: number; relay_candidate: string | null;
   } | null>(null);
+  const [syncProof, setSyncProof] = useState<{
+    server_sent_at_ms: number; bridge_forwarded_at_ms: number; browser_received_at_ms: number;
+    max_rtt_ms: number; my_rtt_ms: number; sync_hold_ms: number; sync_target_ms: number;
+  } | null>(null);
 
   const [examId, setExamId] = useState<string | null>(null);
   const [startAtServerMs, setStartAtServerMs] = useState<number | null>(null);
@@ -293,12 +301,22 @@ export default function App() {
         else if (best.rtt < 120) setSyncQuality("בינוני");
         else setSyncQuality("חלש");
 
+        // Compute [min, median, max] RTT from all 12 NTP samples.
+        // Server uses these 3 values to apply the friend's D_i formula:
+        //   RTT_med = median, J_rtt = max - min, D_i = (RTT_med + J_rtt) / 2
+        const sortedRtts = [...samples].sort((a, b) => a.rtt - b.rtt).map(s => s.rtt);
+        const rttSamples = [
+          sortedRtts[0],                                        // min
+          sortedRtts[Math.floor(sortedRtts.length / 2)],       // median
+          sortedRtts[sortedRtts.length - 1],                    // max
+        ];
+
         const sched = await ws.request<{
           type: "schedule_resp"; req_id: string; exam_id: string;
           start_at_server_ms: number; duration_sec: number;
           deliver_delay_ms?: number; max_rtt_ms?: number;
           my_rtt_ms?: number; relay_candidate?: string | null;
-        }>({ type: "schedule_req", req_id: rid() }, 4000);
+        }>({ type: "schedule_req", req_id: rid(), rtt_samples: rttSamples, offset_ms: offsetMs }, 4000);
 
         setExamId(sched.exam_id);
         setStartAtServerMs(sched.start_at_server_ms);
@@ -321,20 +339,79 @@ export default function App() {
     return () => { alive = false; wsRef.current?.close(); wsRef.current = null; };
   }, []);
 
+  // Fresh RTT samples collected 5 s before T₀ (second NTP run)
+  const freshRttRef = useRef<{ rtt_samples: number[]; offset_ms: number } | null>(null);
+
   // ── waiting → open: fetch exam at T₀, record opened_at ──────────────────
   useEffect(() => {
     if (phase !== "waiting") return;
     if (!examId || !startAtServerMs) return;
     const localStart = startAtServerMs - offsetMs;
     const delay = clamp(localStart - nowMs(), 0, 60_000);
+
+    // ── Pre-exam NTP refresh (3 rounds, 5 s before T₀) ───────────────────
+    // Re-measures RTT/offset so the server gets fresh D_i data right before
+    // the staggered send coordinator fires. Skipped if T₀ is too close.
+    let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+    if (delay > 10_000) {
+      refreshTimer = setTimeout(async () => {
+        const ws = wsRef.current;
+        if (!ws) return;
+        const fresh: SyncSample[] = [];
+        for (let i = 0; i < 3; i++) {
+          try {
+            const t0 = nowMs();
+            const resp = await ws.request<{ type: "time_resp"; req_id: string; server_now_ms: number }>(
+              { type: "time_req", req_id: rid(), client_t0_ms: t0 }, 2500
+            );
+            const t1 = nowMs();
+            const rtt = t1 - t0;
+            fresh.push({ rtt, offset: resp.server_now_ms - (t0 + rtt / 2), at: t1 });
+            await new Promise(r => setTimeout(r, 100));
+          } catch { /* non-critical — skip */ }
+        }
+        if (fresh.length >= 1) {
+          const sorted = [...fresh].sort((a, b) => a.rtt - b.rtt);
+          freshRttRef.current = {
+            rtt_samples: [
+              sorted[0].rtt,
+              sorted[Math.floor(sorted.length / 2)].rtt,
+              sorted[sorted.length - 1].rtt,
+            ],
+            offset_ms: sorted[0].offset,   // best-RTT offset, same as initial sync
+          };
+        }
+      }, delay - 5_000);
+    }
+
     const t = window.setTimeout(async () => {
       try {
         const ws = wsRef.current;
         if (!ws) throw new Error("Socket לא זמין");
         const openedAt = nowMs();
-        const exResp = await ws.request<{ type: "exam_resp"; req_id: string; exam: ExamPayload }>(
-          { type: "exam_req", req_id: rid(), exam_id: examId }, 6000
+        // Include fresh RTT samples if the pre-exam refresh completed
+        const fresh = freshRttRef.current;
+        const exResp = await ws.request<{ type: "exam_resp"; req_id: string; exam: ExamPayload;
+          server_sent_at_ms?: number; bridge_forwarded_at_ms?: number;
+          sync_hold_ms?: number; sync_target_ms?: number;
+          max_rtt_ms?: number; my_rtt_ms?: number; deliver_delay_ms?: number }>(
+          { type: "exam_req", req_id: rid(), exam_id: examId,
+            ...(fresh ? { rtt_samples: fresh.rtt_samples, offset_ms: fresh.offset_ms } : {}) },
+          6000
         );
+        // Capture exact browser receipt time for sync proof
+        const browserReceivedAt = Date.now();
+        if (exResp.server_sent_at_ms) {
+          setSyncProof({
+            server_sent_at_ms:    exResp.server_sent_at_ms,
+            bridge_forwarded_at_ms: exResp.bridge_forwarded_at_ms ?? 0,
+            browser_received_at_ms: browserReceivedAt,
+            max_rtt_ms:  exResp.max_rtt_ms  ?? 0,
+            my_rtt_ms:   exResp.my_rtt_ms   ?? 0,
+            sync_hold_ms:  exResp.sync_hold_ms  ?? exResp.deliver_delay_ms ?? 0,
+            sync_target_ms: exResp.sync_target_ms ?? 0,
+          });
+        }
         setExam(exResp.exam);
         setOpenedAtMs(openedAt);
         const init: Record<string, Answer> = {};
@@ -350,7 +427,10 @@ export default function App() {
         setPhase("error");
       }
     }, delay);
-    return () => window.clearTimeout(t);
+    return () => {
+      window.clearTimeout(t);
+      if (refreshTimer) window.clearTimeout(refreshTimer);
+    };
   }, [phase, examId, startAtServerMs, offsetMs]);
 
   // ── open → running: student clicks start ─────────────────────────────────
@@ -526,6 +606,7 @@ export default function App() {
               exam={exam}
               openedAtMs={openedAtMs!}
               startAtServerMs={startAtServerMs}
+              syncProof={syncProof}
               onStart={handleStartExam}
             />
           )}
@@ -623,6 +704,59 @@ function DnsInfoCard({ connInfo }: { connInfo: NonNullable<ConnInfo> }) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Sync proof card (shown after exam_resp received) ─────────────────────────
+type SyncProofData = {
+  server_sent_at_ms: number; bridge_forwarded_at_ms: number; browser_received_at_ms: number;
+  max_rtt_ms: number; my_rtt_ms: number; sync_hold_ms: number; sync_target_ms: number;
+} | null;
+
+function SyncProofCard({ sp }: { sp: NonNullable<SyncProofData> }) {
+  const T0      = sp.server_sent_at_ms;
+  const transit = sp.bridge_forwarded_at_ms > 0 ? sp.bridge_forwarded_at_ms - T0 : null;
+  const total   = sp.browser_received_at_ms - T0;
+  const target  = sp.sync_target_ms > 0 ? sp.sync_target_ms - T0 : sp.max_rtt_ms / 2 + 30;
+  const delta   = total - target;
+  const synced  = Math.abs(delta) < 30;
+
+  const row = (label: string, val: string, color = "#0f172a") => (
+    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "3px 0",
+                  borderBottom: "1px solid #f1f5f9" }}>
+      <span style={{ color: "#64748b" }}>{label}</span>
+      <span style={{ fontFamily: "monospace", fontWeight: 700, color }}>{val}</span>
+    </div>
+  );
+
+  return (
+    <div style={{ marginTop: 16, background: synced ? "#f0fdf4" : "#fefce8",
+                  border: `1px solid ${synced ? "#86efac" : "#fde047"}`,
+                  borderRadius: 10, padding: "14px 16px" }}>
+      <div style={{ fontWeight: 700, fontSize: 12, color: synced ? "#15803d" : "#92400e",
+                    marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+        <span>{synced ? "✓" : "⚠"}</span> Synchronized Delivery Proof — exam_resp
+      </div>
+      {row("Server sent at",         formatTime(T0))}
+      {transit !== null && row("Bridge forwarded at", `+${transit.toFixed(1)} ms`)}
+      {row("Browser received at",    `+${total.toFixed(1)} ms`)}
+      <div style={{ margin: "8px 0 4px", borderTop: "1px solid #e2e8f0", paddingTop: 8 }} />
+      {row("Target delivery",        `+${target.toFixed(1)} ms`,  "#2563eb")}
+      {row("Delta from target",      `${delta >= 0 ? "+" : ""}${delta.toFixed(1)} ms`,
+           Math.abs(delta) < 10 ? "#15803d" : Math.abs(delta) < 30 ? "#d97706" : "#dc2626")}
+      <div style={{ marginTop: 8, fontSize: 11, color: "#64748b", fontFamily: "monospace",
+                    background: "#f8fafc", borderRadius: 6, padding: "6px 8px", lineHeight: 1.8 }}>
+        target = server_sent + max_rtt/2 + buffer<br/>
+        {"      "}= T₀ + {sp.max_rtt_ms.toFixed(1)}/2 + 30 = T₀ + {target.toFixed(1)} ms<br/>
+        hold   = target − time.now() = {sp.sync_hold_ms.toFixed(1)} ms
+      </div>
+      <div style={{ marginTop: 8, fontSize: 11, fontWeight: 700, textAlign: "center",
+                    color: synced ? "#15803d" : "#92400e" }}>
+        {synced
+          ? `✓ SYNCHRONIZED — arrived ${Math.abs(delta).toFixed(1)} ms from target`
+          : `⚠ ${Math.abs(delta).toFixed(1)} ms off-target (jitter buffer = 30 ms)`}
+      </div>
     </div>
   );
 }
@@ -1052,11 +1186,12 @@ function ExamView({
 
 // ── Exam opened (waiting for student to click start) ─────────────────────────
 function ExamOpenedScreen({
-  exam, openedAtMs, startAtServerMs, onStart,
+  exam, openedAtMs, startAtServerMs, syncProof, onStart,
 }: {
   exam: ExamPayload;
   openedAtMs: number;
   startAtServerMs: number;
+  syncProof: SyncProofData;
   onStart: () => void;
 }) {
   const deltaMs = Math.round(openedAtMs - startAtServerMs);
@@ -1107,6 +1242,9 @@ function ExamOpenedScreen({
       <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 16, textAlign: "center" }}>
         {exam.instructions}
       </div>
+
+      {/* Self-correcting sync proof — shows actual bridge hold and delta from target */}
+      {syncProof && <SyncProofCard sp={syncProof} />}
 
       <button
         style={{ ...s.btnSubmit, marginTop: 28, width: "100%", fontSize: 17, padding: "16px 0", background: "#2563eb" }}
