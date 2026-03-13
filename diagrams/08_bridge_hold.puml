@@ -1,0 +1,81 @@
+@startuml 08_bridge_hold
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam sequenceArrowThickness 1.8
+skinparam sequenceArrowColor #2563eb
+skinparam participantBackgroundColor #f0f4ff
+skinparam participantBorderColor #93c5fd
+skinparam participantBorderThickness 2
+skinparam participantFontColor #1e3a5f
+skinparam noteBackgroundColor #fefce8
+skinparam noteBorderColor #f59e0b
+
+autonumber "<b>( 0 )</b>"
+
+title <size:18><color:#1d4ed8>**Bridge Self-Correcting Hold**</color></size>\n<size:11><color:#64748b>ZS decode → target_ms → hold_ms → forward to browser</color></size>
+
+participant "🖥 exam-server" as server #f0fdf4
+participant "🔗 ws_bridge\n(client-N)" as bridge #fffbeb
+actor       "👤 דפדפן"       as browser #dbeafe
+
+== קבלת ZS packet מהשרת ==
+
+server -> bridge : **RUDP DATA [ZS packet]**\nb'ZS' + uint16(meta_len) + meta_bytes + exam_zl
+
+activate bridge
+
+bridge -> bridge : **פענוח ZS:**\nmeta_len = uint16(data[2:4])\nmeta = json.loads(data[4 : 4+meta_len])\nexam_zl = data[4+meta_len:]\nexam_json = zlib.decompress(exam_zl)
+
+note right of bridge
+  **meta מכיל:**
+  server_sent_at_ms: 1700000120052
+  max_rtt_ms: 38.6
+  my_rtt_ms: 11.2
+  D_i: 6.8
+end note
+
+== חישוב Hold ==
+
+bridge -> bridge : **חישוב target_ms:**\ntarget_ms = server_sent_at_ms\n           + max_rtt_ms / 2\n           + JITTER_BUFFER_MS (5ms)\n         = 120052 + 19.3 + 5 = **120076.3**\n\n**חישוב hold_ms:**\nnow_ms = time.time() * 1000\nhold_ms = target_ms − now_ms\nactual_hold = max(0.0, hold_ms)
+
+note right of bridge #f0fdf4
+  **דוגמה:**
+  server_sent_at_ms = 120052
+  now_ms (קבלה)    = 120061  (transit=9ms)
+  target_ms         = 120076
+  hold_ms           = 120076 − 120061 = **15ms**
+end note
+
+== מנגנון התיקון העצמי ==
+
+note over bridge #fff7ed
+  **Self-Correcting Hold:**
+  אם RUDP ביצע retransmit שעיכב ב-Δ ms:
+  → now_ms בעת הקבלה כבר התקדם ב-Δ
+  → hold_ms = target_ms − now_ms **מתקצר ב-Δ אוטומטית**
+  → הלקוח עדיין מגיע ל-target_ms ± 5ms
+
+  אם hold_ms < 0: החבילה איחרה → שולחים מיידית (max=0)
+end note
+
+bridge -> bridge : asyncio.sleep(actual_hold / 1000)
+
+bridge -> bridge : **הוספת שדות proof:**\nbridge_forwarded_at_ms = time.time()*1000\nsync_hold_ms = actual_hold\nsync_target_ms = target_ms\n(transit_ms — לא נוסף לpacket, רק ב-log)
+
+bridge --> browser : **{type: "exam_resp"}**\nexam: {...}\nserver_sent_at_ms: 120052\nbridge_forwarded_at_ms: 120076\nsync_hold_ms: 15.0\nsync_target_ms: 120076.3\nmax_rtt_ms: 38.6
+
+deactivate bridge
+
+note over browser #f0fdf4
+  **SyncProofCard מציג:**
+  transit_ms = forwarded − server_sent = 24ms  (מחושב בדפדפן)
+  sync_hold_ms  = 15.0 ms
+  sync_delta_ms = target − forwarded ≈ 0ms  ✓
+  spread_ms     = |forwarded_A − forwarded_B| < 10ms  ✓
+end note
+
+@enduml

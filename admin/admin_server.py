@@ -9,6 +9,7 @@ Endpoints:
   GET  /api/submissions   — all saved/submitted answers
   GET  /api/exam          — current exam JSON
   POST /api/exam          — upload new exam JSON
+  POST /api/reset         — wipe clients.json, start_at.txt, all answers
 """
 from __future__ import annotations
 import json
@@ -272,6 +273,46 @@ async def upload_exam(file: UploadFile = File(...)):
     return {"ok": True, "exam_id": parsed.get("exam_id"), "questions": len(parsed.get("questions", []))}
 
 
+@app.post("/api/reset")
+async def api_reset():
+    """Wipe all session data: clients.json, start_at.txt, and all answers."""
+    import shutil
+    deleted: list[str] = []
+    errors:  list[str] = []
+
+    # Remove clients.json
+    cf = SHARED_DIR / 'clients.json'
+    if cf.exists():
+        try:
+            cf.unlink()
+            deleted.append('clients.json')
+        except Exception as e:
+            errors.append(f'clients.json: {e}')
+
+    # Remove start_at.txt
+    sf = SHARED_DIR / 'start_at.txt'
+    if sf.exists():
+        try:
+            sf.unlink()
+            deleted.append('start_at.txt')
+        except Exception as e:
+            errors.append(f'start_at.txt: {e}')
+
+    # Wipe all answer files (keep the directory structure)
+    if ANSWERS_DIR.exists():
+        for exam_dir in ANSWERS_DIR.iterdir():
+            if exam_dir.is_dir():
+                try:
+                    shutil.rmtree(exam_dir)
+                    deleted.append(f'answers/{exam_dir.name}/')
+                except Exception as e:
+                    errors.append(f'answers/{exam_dir.name}: {e}')
+
+    if errors:
+        raise HTTPException(500, detail={"deleted": deleted, "errors": errors})
+    return {"ok": True, "deleted": deleted}
+
+
 @app.get("/api/dns/trace")
 async def dns_trace(name: str = "server.exam.lan"):
     """Perform iterative DNS resolution and return each hop's details."""
@@ -384,6 +425,22 @@ pre{background:#161b22;border:1px solid #30363d;border-radius:6px;padding:16px;f
 .section-sub{font-size:.82rem;color:#8b949e;margin-bottom:16px}
 .empty{color:#8b949e;font-style:italic;padding:20px 0;text-align:center}
 .mono{font-family:monospace;font-size:.85rem}
+
+/* Reset button */
+.btn-reset{background:#3a1a1a;color:#f85149;border:1px solid #f85149;padding:6px 16px;border-radius:6px;font-size:.85rem;cursor:pointer;font-weight:600;transition:background .15s}
+.btn-reset:hover{background:#5a1a1a}
+
+/* Reset modal */
+#reset-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:999;align-items:center;justify-content:center}
+#reset-modal.show{display:flex}
+#reset-box{background:#161b22;border:1px solid #f85149;border-radius:10px;padding:32px 36px;max-width:420px;width:90%;text-align:center}
+#reset-box h2{color:#f85149;margin-bottom:12px;font-size:1.1rem}
+#reset-box p{color:#8b949e;font-size:.9rem;margin-bottom:24px;line-height:1.5}
+#reset-box .btn-row{display:flex;gap:12px;justify-content:center}
+#reset-box .btn-cancel{background:#21262d;color:#c9d1d9;border:1px solid #30363d;padding:8px 24px;border-radius:6px;cursor:pointer;font-size:.9rem}
+#reset-box .btn-confirm{background:#da3633;color:#fff;border:none;padding:8px 24px;border-radius:6px;cursor:pointer;font-size:.9rem;font-weight:600}
+#reset-box .btn-confirm:hover{background:#b62324}
+#reset-result{margin-top:16px;font-size:.85rem;color:#3fb950;min-height:20px}
 </style>
 </head>
 <body>
@@ -392,7 +449,24 @@ pre{background:#161b22;border:1px solid #30363d;border-radius:6px;padding:16px;f
   <h1>🎓 Admin Panel — מערכת הבחינות</h1>
   <span id="server-clock">טוען...</span>
   <span id="exam-badge" class="badge-waiting">ממתין לבחינה</span>
+  <button class="btn-reset" onclick="openResetModal()">🗑 איפוס מלא</button>
 </header>
+
+<!-- Reset confirmation modal -->
+<div id="reset-modal">
+  <div id="reset-box">
+    <h2>⚠ איפוס מלא של המערכת</h2>
+    <p>פעולה זו תמחק את כל הנתונים:<br>
+       <strong>clients.json · start_at.txt · כל ההגשות</strong><br><br>
+       לא ניתן לבטל פעולה זו.
+    </p>
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="closeResetModal()">ביטול</button>
+      <button class="btn-confirm" onclick="confirmReset()">כן, אפס הכל</button>
+    </div>
+    <div id="reset-result"></div>
+  </div>
+</div>
 
 <div id="stats">
   <div class="stat"><span class="stat-val" id="s-clients">—</span><span class="stat-lbl">משתתפים</span></div>
@@ -822,6 +896,45 @@ function toggleAcc(head) {
   body.classList.toggle('open');
   arr.classList.toggle('open');
 }
+
+// ── Reset ─────────────────────────────────────────────────────────────────────
+
+function openResetModal() {
+  document.getElementById('reset-result').textContent = '';
+  document.getElementById('reset-modal').classList.add('show');
+}
+function closeResetModal() {
+  document.getElementById('reset-modal').classList.remove('show');
+}
+async function confirmReset() {
+  const btn = document.querySelector('#reset-box .btn-confirm');
+  btn.disabled = true;
+  btn.textContent = 'מאפס...';
+  const resultEl = document.getElementById('reset-result');
+  try {
+    const r = await fetch('/api/reset', { method: 'POST' });
+    const d = await r.json();
+    if (r.ok) {
+      resultEl.style.color = '#3fb950';
+      resultEl.textContent = '✓ אופס: ' + (d.deleted || []).join(', ');
+      setTimeout(closeResetModal, 2000);
+    } else {
+      resultEl.style.color = '#f85149';
+      resultEl.textContent = 'שגיאה: ' + JSON.stringify(d.detail || d);
+    }
+  } catch (e) {
+    resultEl.style.color = '#f85149';
+    resultEl.textContent = 'שגיאת רשת: ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'כן, אפס הכל';
+  }
+}
+// Close modal on backdrop click
+document.addEventListener('click', e => {
+  const modal = document.getElementById('reset-modal');
+  if (e.target === modal) closeResetModal();
+});
 
 // ── Exam upload ───────────────────────────────────────────────────────────────
 

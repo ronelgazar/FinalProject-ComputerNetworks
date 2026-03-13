@@ -34,6 +34,7 @@ COPY DHCP/dhcp_client.py .
 COPY RUDP/rudp_packet.py .
 COPY RUDP/rudp_socket.py .
 COPY RUDP/ws_bridge.py .
+COPY TCP/ws_bridge_tcp.py .
 
 COPY DHCP/entrypoint.sh /entrypoint.sh
 COPY DHCP/nginx.conf /etc/nginx/conf.d/default.conf

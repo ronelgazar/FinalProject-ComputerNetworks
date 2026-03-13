@@ -1,0 +1,158 @@
+@startuml 06_rtt_sync
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam sequenceArrowThickness 1.8
+skinparam sequenceArrowColor #2563eb
+skinparam participantBackgroundColor #f0f4ff
+skinparam participantBorderColor #93c5fd
+skinparam participantBorderThickness 2
+skinparam participantFontColor #1e3a5f
+skinparam noteBackgroundColor #fefce8
+skinparam noteBorderColor #f59e0b
+
+autonumber "<b>( 0 )</b>"
+
+title <size:18><color:#1d4ed8>**RTT Sync — Adaptive Clock Synchronisation**</color></size>\n<size:11><color:#64748b>Phase 1: bootstrap (3) → schedule_req · Phase 2: adaptive refinement · Phase 3: fresh sample (3) → exam_req</color></size>
+
+actor       "👤 דפדפן\n(App.tsx)"            as browser #dbeafe
+participant "🔗 ws_bridge\n(client-N :8081)" as bridge  #fffbeb
+participant "🖥 exam-server\nUDP:9000"        as server  #f0fdf4
+
+== Phase 0 — WebSocket + Hello ==
+
+browser -> bridge : **{type: "hello", client_id: "web-xyz"}**
+bridge  -> server  : RUDP DATA [hello]
+
+note right of bridge
+  allSamples = []
+  כל סבב מחזיר SyncSample:
+  { rtt, offset, at }
+end note
+
+== Phase 1 — 3 Bootstrap Rounds (50ms cadence) ==
+
+group Bootstrap [3 סבבים מהירים — 50ms בין סבב לסבב]
+  loop i = 0..2
+    browser -> bridge : **{type: "time_req", client_t0_ms: T0}**
+    bridge  -> server  : RUDP DATA [time_req]
+    activate server
+    server --> bridge  : RUDP DATA\n**{type: "time_resp", server_now_ms: T_server}**
+    deactivate server
+    bridge --> browser : **{type: "time_resp", server_now_ms: T_server}**
+
+    note right of browser
+      T1 = nowMs()
+      **rtt_i    = T1 − T0**
+      **offset_i = T_server − (T0 + T1) / 2**
+      allSamples.push({rtt_i, offset_i})
+    end note
+
+    note right of browser
+      אם i < 2: sleep(50ms)
+    end note
+  end loop
+end group
+
+note over browser #f0fdf4
+  **buildRttSamples(allSamples):**
+  מיון לפי RTT → [min, median, max]
+
+  **bestSampleNow():**
+  דגימה עם RTT הנמוך ביותר
+  offset = bestSample.offset
+end note
+
+== schedule_req (לאחר Phase 1) ==
+
+browser -> bridge : **{type: "schedule_req",\nrtt_samples: [min,med,max],\noffset_ms: bestSample.offset}**
+bridge  -> server  : RUDP DATA [schedule_req]
+server --> bridge  : RUDP DATA [schedule_resp]
+bridge --> browser : **{type: "schedule_resp",\nstart_at_server_ms, duration_sec}**
+
+note right of browser
+  setPhase("waiting")
+  T₀ = start_at_server_ms − bestSample.offset
+  (זמן התחלה בשעון מקומי)
+end note
+
+== Phase 2 — Adaptive Refinement (during wait) ==
+
+group Adaptive [כל 200ms בזמן ההמתנה — עד להתכנסות]
+  loop while alive
+    note right of browser #fff7ed
+      **תנאי עצירה (כלשהו):**
+      msToT₀ < 8000 ms  → break
+      stdev(last 5 offsets) < 1.5ms → break
+      allSamples.length >= 20 → break
+    end note
+
+    browser -> bridge : **time_req**
+    bridge  -> server  : RUDP DATA [time_req]
+    server --> bridge  : RUDP DATA [time_resp]
+    bridge --> browser : **time_resp**
+
+    note right of browser
+      allSamples.push(sample)
+      **syncStdev** = stdev של
+      5 ה-offsets האחרונים
+    end note
+
+    note right of browser
+      sleep(200ms)
+    end note
+  end loop
+end group
+
+== Phase 3 — Fresh Sample at T₀ − 5s ==
+
+note over browser #f0fdf4
+  sleep עד T₀ − 5000ms
+  freshSamples = []
+end note
+
+group Fresh Sample [3 סבבים טריים — 100ms cadence]
+  loop i = 0..2
+    browser -> bridge : **time_req**
+    bridge  -> server  : RUDP DATA [time_req]
+    server --> bridge  : RUDP DATA [time_resp]
+    bridge --> browser : **time_resp**
+
+    note right of browser
+      freshSamples.push(sample)
+      allSamples.push(sample)
+      אם i < 2: sleep(100ms)
+    end note
+  end loop
+end group
+
+note over browser #fefce8
+  **freshForExam:**
+  rtt_samples = buildRttSamples(freshSamples)
+  offset_ms   = freshSamples.sort(rtt)[0].offset
+  (הדגימה הטרייה ביותר עם RTT הנמוך ביותר)
+end note
+
+== Phase 4 — Sleep to T₀ → exam_req ==
+
+note over browser #f0fdf4
+  sleep(T₀ − nowMs())
+end note
+
+browser -> bridge : **{type: "exam_req",\nrtt_samples: freshForExam.rtt_samples,\noffset_ms: freshForExam.offset_ms}**
+
+note over browser, server #f0fdf4
+  **סיכום allSamples:**
+  Phase 1:  3 דגימות (קבוע)
+  Phase 2:  0–17 דגימות (אדפטיבי)
+  Phase 3:  3 דגימות (טריות)
+  סה"כ:     3 – 20+ דגימות
+
+  **offset שנשלח = offset הדגימה עם RTT הנמוך ביותר**
+  (לא חציון — הטוב ביותר שנמדד)
+end note
+
+@enduml

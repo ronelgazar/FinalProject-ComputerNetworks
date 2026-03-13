@@ -1,0 +1,90 @@
+@startuml 00_birdsview
+!theme plain
+left to right direction
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundcorner 14
+skinparam nodesep 30
+skinparam ranksep 50
+skinparam ArrowThickness 2
+skinparam ArrowFontSize 10
+
+skinparam actor {
+  BackgroundColor #dbeafe
+  BorderColor #3b82f6
+  FontColor #1e3a5f
+  FontStyle bold
+}
+skinparam rectangle {
+  BackgroundColor #f0f4ff
+  BorderColor #93c5fd
+  BorderThickness 2
+  FontColor #1e3a5f
+  FontStyle bold
+  FontSize 12
+}
+skinparam package {
+  BackgroundColor #f8fafc
+  BorderColor #cbd5e1
+  FontColor #334155
+  FontStyle bold
+  FontSize 12
+}
+skinparam database {
+  BackgroundColor #faf5ff
+  BorderColor #a855f7
+  FontColor #6b21a8
+  FontSize 11
+}
+
+
+' ── HOST ──────────────────────────────────────────────
+actor "👤 דפדפן\n סטודנט" as browser
+actor "📊 דשבורד להצגה" as prof
+
+' ── CLIENT CONTAINER ──────────────────────────────────
+rectangle "📦 קונטיינר לקוח  (×3  ניתן להרחבה)\nIP מוקצה ע״י DHCP " as client_pkg #fffbeb {
+  rectangle "🌐 nginx  :80\nממשק React  |  reverse proxy\n/ws→:8081  /ws-tcp-sync→:8082  /ws-tcp-nosync→:8083" as nginx_bv #fef9c3
+
+  rectangle "bridge WS\nws_bridge  :8081  (RUDP+סנכרון)\nws_bridge_tcp  :8082  (TCP+סנכרון)\nws_bridge_tcp  :8083  (TCP+ללא סנכרון)" as bridges_bv #f0fdf4
+}
+
+' ── INFRASTRUCTURE ────────────────────────────────────
+rectangle "🏠 DHCP\n10.99.0.3" as dhcp #f0fdf4
+rectangle "🌐 היררכיית DNS\nResolver → Root → TLD → Auth\n10.99.0.2 / .10 / .11 / .12" as dns #dbeafe
+
+' ── EXAM SERVERS ──────────────────────────────────────
+rectangle "⚡ שרתי RUDP ×3\n10.99.0.20-22  UDP:9000\nExamSendCoordinator  +  ZS wire" as rudp #e0fdf4
+rectangle "🔌 TCP סנכרון\n10.99.0.23  TCP:9001\nExamSendCoordinator" as tcps #f3e8ff
+rectangle "🔌 TCP ללא סנכרון\n10.99.0.24  TCP:9001\nבסיס השוואה" as tcpn #fff7ed
+
+' ── STORAGE + ADMIN ───────────────────────────────────
+database "💾 exam-shared\n+ answers-data" as vols
+rectangle "📋 ממשק ניהול\n10.99.0.30  :9999" as admin #fef2ff
+
+' ── ARROWS ────────────────────────────────────────────
+dhcp       -[#4ade80]->        client_pkg  : "① DHCPACK\nהקצאת IP לקונטיינר"
+browser    -[#2563eb]->        nginx_bv    : "② HTTP :80\nטעינת ממשק"
+nginx_bv   -[#94a3b8]->        bridges_bv  : "proxy\nlocalhost"
+bridges_bv -[#60a5fa]->        dns         : "③ שאילתת DNS\nserver.exam.lan"
+bridges_bv -[#16a34a]->        rudp        : "④ RUDP"
+bridges_bv -[#7c3aed]->        tcps        : "④ TCP"
+bridges_bv -[#ea580c]->        tcpn        : "④ TCP"
+rudp       -[#2563eb]->        vols        : "⑤ כתיבה"
+tcps       -[#7c3aed,dashed]-> vols
+tcpn       -[#ea580c,dashed]-> vols
+admin      -[#a855f7]->        vols        : "קריאה"
+browser    -[#94a3b8,dashed]-> admin       : "⑥ :9999"
+prof       -[#0ea5e9,dashed]-> bridges_bv  : "netem / מצב DNS"
+
+legend bottom right
+  | <color:#16a34a><b>——</b></color> | RUDP + סנכרון |
+  | <color:#7c3aed><b>——</b></color> | TCP + סנכרון  |
+  | <color:#ea580c><b>——</b></color> | TCP ללא סנכרון |
+  | <color:#60a5fa><b>——</b></color> | DNS |
+  | <color:#94a3b8><b>- -</b></color> | משני |
+endlegend
+
+@enduml

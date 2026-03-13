@@ -9,6 +9,13 @@ networks:
         - subnet: 10.99.0.0/24
           gateway: 10.99.0.1
 
+# Shared base for packet-capture sidecars (activate with --profile capture)
+x-capture: &capture-base
+  build: ./capture
+  cap_add: [NET_ADMIN, NET_RAW]
+  volumes: ["./captures:/captures"]
+  profiles: ["capture"]
+
 services:
   # ── DHCP ─────────────────────────────────────────────────────────
   dhcp-server:
@@ -16,6 +23,8 @@ services:
       context: ./DHCP
       dockerfile: Dockerfile.server
     container_name: dhcp-server
+    environment:
+      - SERVER_IP=10.99.0.3
     networks:
       exam-net:
         ipv4_address: 10.99.0.3
@@ -31,6 +40,7 @@ services:
     container_name: dns-root
     environment:
       - DNS_ROLE=root
+      - RECURSIVE_CAPABLE=0   # set to 1 or toggle via prof dashboard
     networks:
       exam-net:
         ipv4_address: 10.99.0.10
@@ -68,6 +78,7 @@ services:
     environment:
       - DNS_ROLE=resolver
       - ROOT_SERVER=10.99.0.10
+      - RESOLUTION_MODE=iterative  # toggle via prof dashboard (no restart needed)
     networks:
       exam-net:
         ipv4_address: 10.99.0.2
@@ -122,6 +133,41 @@ services:
       - START_OFFSET_SEC=120
     restart: unless-stopped
 
+  # ── TCP exam backend (sync + nosync) ────────────────────────────────────────
+  tcp-server-sync:
+    build:
+      context: .
+      dockerfile: TCP/Dockerfile.server
+    container_name: tcp-server-sync
+    networks:
+      exam-net:
+        ipv4_address: 10.99.0.23
+    volumes:
+      - exam-shared:/app/shared
+      - answers-data:/app/answers
+    environment:
+      - TCP_PORT=9001
+      - SYNC_ENABLED=1
+      - START_OFFSET_SEC=120
+    restart: unless-stopped
+
+  tcp-server-nosync:
+    build:
+      context: .
+      dockerfile: TCP/Dockerfile.server
+    container_name: tcp-server-nosync
+    networks:
+      exam-net:
+        ipv4_address: 10.99.0.24
+    volumes:
+      - exam-shared:/app/shared
+      - answers-data:/app/answers
+    environment:
+      - TCP_PORT=9001
+      - SYNC_ENABLED=0
+      - START_OFFSET_SEC=120
+    restart: unless-stopped
+
   # ── Admin panel ───────────────────────────────────────────────────
   admin:
     build:
@@ -148,6 +194,7 @@ services:
     build:
       context: .
       dockerfile: DHCP/Dockerfile.client
+    container_name: client-1
     ports:
       - "8081:80"
     networks:
@@ -158,17 +205,21 @@ services:
       - 10.99.0.2
     environment:
       - DHCP_SERVER_IP=10.99.0.3
-      - RUDP_SERVER_HOST=server.exam.lan
+      - RUDP_SERVER_HOST=server1.exam.lan
       - RUDP_SERVER_PORT=9000
+      - CONTAINER_MAC=02:42:0a:63:01:01
     depends_on:
       - dhcp-server
       - dns-resolver
       - rudp-server-1
+      - tcp-server-sync
+      - tcp-server-nosync
 
   client-2:
     build:
       context: .
       dockerfile: DHCP/Dockerfile.client
+    container_name: client-2
     ports:
       - "8082:80"
     networks:
@@ -179,17 +230,21 @@ services:
       - 10.99.0.2
     environment:
       - DHCP_SERVER_IP=10.99.0.3
-      - RUDP_SERVER_HOST=server.exam.lan
+      - RUDP_SERVER_HOST=server2.exam.lan
       - RUDP_SERVER_PORT=9000
+      - CONTAINER_MAC=02:42:0a:63:01:02
     depends_on:
       - dhcp-server
       - dns-resolver
-      - rudp-server-1
+      - rudp-server-2
+      - tcp-server-sync
+      - tcp-server-nosync
 
   client-3:
     build:
       context: .
       dockerfile: DHCP/Dockerfile.client
+    container_name: client-3
     ports:
       - "8083:80"
     networks:
@@ -200,12 +255,114 @@ services:
       - 10.99.0.2
     environment:
       - DHCP_SERVER_IP=10.99.0.3
-      - RUDP_SERVER_HOST=server.exam.lan
+      - RUDP_SERVER_HOST=server3.exam.lan
       - RUDP_SERVER_PORT=9000
+      - CONTAINER_MAC=02:42:0a:63:01:03
     depends_on:
       - dhcp-server
       - dns-resolver
-      - rudp-server-1
+      - rudp-server-3
+      - tcp-server-sync
+      - tcp-server-nosync
+
+  # ── Packet Capture sidecars (docker compose --profile capture up) ──
+  capture-dhcp:
+    <<: *capture-base
+    container_name: capture-dhcp
+    network_mode: "service:dhcp-server"
+    command: ["/captures/dhcp-server.pcap"]
+    depends_on: [dhcp-server]
+
+  capture-dns-root:
+    <<: *capture-base
+    container_name: capture-dns-root
+    network_mode: "service:dns-root"
+    command: ["/captures/dns-root.pcap"]
+    depends_on: [dns-root]
+
+  capture-dns-tld:
+    <<: *capture-base
+    container_name: capture-dns-tld
+    network_mode: "service:dns-tld"
+    command: ["/captures/dns-tld.pcap"]
+    depends_on: [dns-tld]
+
+  capture-dns-auth:
+    <<: *capture-base
+    container_name: capture-dns-auth
+    network_mode: "service:dns-auth"
+    command: ["/captures/dns-auth.pcap"]
+    depends_on: [dns-auth]
+
+  capture-dns-resolver:
+    <<: *capture-base
+    container_name: capture-dns-resolver
+    network_mode: "service:dns-resolver"
+    command: ["/captures/dns-resolver.pcap"]
+    depends_on: [dns-resolver]
+
+  capture-rudp-1:
+    <<: *capture-base
+    container_name: capture-rudp-1
+    network_mode: "service:rudp-server-1"
+    command: ["/captures/rudp-server-1.pcap"]
+    depends_on: [rudp-server-1]
+
+  capture-rudp-2:
+    <<: *capture-base
+    container_name: capture-rudp-2
+    network_mode: "service:rudp-server-2"
+    command: ["/captures/rudp-server-2.pcap"]
+    depends_on: [rudp-server-2]
+
+  capture-rudp-3:
+    <<: *capture-base
+    container_name: capture-rudp-3
+    network_mode: "service:rudp-server-3"
+    command: ["/captures/rudp-server-3.pcap"]
+    depends_on: [rudp-server-3]
+
+  capture-tcp-sync:
+    <<: *capture-base
+    container_name: capture-tcp-sync
+    network_mode: "service:tcp-server-sync"
+    command: ["/captures/tcp-server-sync.pcap"]
+    depends_on: [tcp-server-sync]
+
+  capture-tcp-nosync:
+    <<: *capture-base
+    container_name: capture-tcp-nosync
+    network_mode: "service:tcp-server-nosync"
+    command: ["/captures/tcp-server-nosync.pcap"]
+    depends_on: [tcp-server-nosync]
+
+  capture-admin:
+    <<: *capture-base
+    container_name: capture-admin
+    network_mode: "service:admin"
+    command: ["/captures/admin.pcap"]
+    depends_on: [admin]
+
+  capture-client-1:
+    <<: *capture-base
+    container_name: capture-client-1
+    network_mode: "service:client-1"
+    command: ["/captures/client-1.pcap"]
+    depends_on: [client-1]
+
+  capture-client-2:
+    <<: *capture-base
+    container_name: capture-client-2
+    network_mode: "service:client-2"
+    command: ["/captures/client-2.pcap"]
+    depends_on: [client-2]
+
+  capture-client-3:
+    <<: *capture-base
+    container_name: capture-client-3
+    network_mode: "service:client-3"
+    command: ["/captures/client-3.pcap"]
+    depends_on: [client-3]
 
 volumes:
   dhcp-leases:

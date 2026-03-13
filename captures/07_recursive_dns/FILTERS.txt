@@ -1,0 +1,15 @@
+# Wireshark filters for 07_recursive_dns
+# Open: wireshark C:\Users\ronelgazar\Documents\University\year2\Semester1\Computer Networks\final\FinalProject-ComputerNetworks\captures\07_recursive_dns\*.pcap
+
+#  Client query + resolver response (1 pair)
+#    dns && ip.addr == 10.99.0.2  [dns-resolver.pcap]
+#  Resolver → root RD=1 sub-query
+#    dns.flags.recdesired == 1  [dns-resolver.pcap]
+#  Root internal sub-queries to TLD + auth
+#    dns  [dns-root.pcap — root's own outgoing queries]
+#  TLD + auth were NOT contacted by resolver
+#    dns  [dns-tld.pcap / dns-auth.pcap should be silent or minimal]
+#  RA=1 in resolver's reply to client
+#    dns.flags.recavail == 1  [dns-resolver.pcap]
+#  Compare vs iterative chain (scenario 01)
+#    open 01_single_full_flow/dns-*.pcap alongside — more hops, same answer

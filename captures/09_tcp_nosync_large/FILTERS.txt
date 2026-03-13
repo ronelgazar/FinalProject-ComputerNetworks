@@ -1,0 +1,17 @@
+# Wireshark filters for 09_tcp_nosync_large
+# Open: wireshark C:\Users\ronelgazar\Documents\University\year2\Semester1\Computer Networks\final\FinalProject-ComputerNetworks\captures\09_tcp_nosync_large\*.pcap
+
+#  All TCP exam traffic
+#    tcp.port == 9001
+#  Data segments only (no pure ACKs)
+#    tcp.port == 9001 && tcp.len > 0
+#  Read exam questions (plain JSON)
+#    tcp.port == 9001 → right-click → Follow TCP Stream  → exam questions visible as UTF-8 text, no decompression needed
+#  TCP sliding window — Time/Sequence graph
+#    Wireshark: Statistics → TCP Stream Graphs → Time-Sequence Graph  (select the tcp-server-nosync.pcap stream) — shows slow-start staircase
+#  TCP window size field
+#    tcp.port == 9001 && tcp.len > 0  → look at tcp.window_size column
+#  Count TCP data segments for exam_resp
+#    tshark -r tcp-server-nosync.pcap -Y "tcp.port==9001 && tcp.len>0" -T fields -e frame.time_relative -e tcp.len -e tcp.seq > tcp_segments.csv
+#  No sync fields present (baseline)
+#    Follow TCP Stream → search 'server_sent_at_ms' → absent  compare with scenario 10 where it IS present

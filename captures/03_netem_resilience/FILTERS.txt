@@ -1,0 +1,11 @@
+# Wireshark filters for 03_netem_resilience
+# Open: wireshark C:\Users\ronelgazar\Documents\University\year2\Semester1\Computer Networks\final\FinalProject-ComputerNetworks\captures\03_netem_resilience\*.pcap
+
+#  client-2 extra latency
+#    udp.port == 9000  [client-2.pcap: larger inter-packet gaps]
+#  Bridge hold absorbs the delay
+#    udp.port == 9000  [compare hold_ms in exam_resp JSON payload]
+#  Spread despite bad connection
+#    merge client-1.pcap + client-2.pcap, filter udp.port==9000
+#  RUDP retransmits on client-2
+#    udp.port == 9000  [duplicate seq numbers in client-2.pcap]

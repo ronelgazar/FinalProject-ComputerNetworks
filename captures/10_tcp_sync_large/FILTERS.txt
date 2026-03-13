@@ -1,0 +1,17 @@
+# Wireshark filters for 10_tcp_sync_large
+# Open: wireshark C:\Users\ronelgazar\Documents\University\year2\Semester1\Computer Networks\final\FinalProject-ComputerNetworks\captures\10_tcp_sync_large\*.pcap
+
+#  All TCP exam traffic
+#    tcp.port == 9001
+#  Data segments only (no pure ACKs)
+#    tcp.port == 9001 && tcp.len > 0
+#  Read exam questions (plain JSON)
+#    tcp.port == 9001 → Follow TCP Stream → exam questions readable as text
+#  Sync metadata in exam_resp
+#    Follow TCP Stream → search 'server_sent_at_ms' → present  also look for 'sync_hold_ms' and 'bridge_forwarded_at_ms'
+#  TCP sliding window — Time/Sequence graph
+#    Statistics → TCP Stream Graphs → Time-Sequence Graph  — slow-start staircase identical to no-sync (transport-agnostic sync)
+#  Compare sync vs no-sync payload
+#    open 09_tcp_nosync_large and 10_tcp_sync_large side-by-side  → Follow TCP Stream on each → server_sent_at_ms absent/present
+#  Extract sync timestamps with tshark
+#    tshark -r tcp-server-sync.pcap -Y "tcp.port==9001 && tcp.len>0" -T fields -e frame.time_relative -e tcp.len > tcp_sync_segments.csv

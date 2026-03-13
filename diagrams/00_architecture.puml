@@ -1,0 +1,170 @@
+@startuml 00_architecture
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam shadowing false
+skinparam sequenceArrowThickness 1.8
+skinparam sequenceArrowFontSize 10
+skinparam sequenceGroupBorderThickness 1.5
+skinparam sequenceParticipantBorderThickness 2
+skinparam roundcorner 8
+
+skinparam participant {
+  BackgroundColor #f0f4ff
+  BorderColor #93c5fd
+  FontColor #1e3a5f
+  FontStyle bold
+}
+skinparam actor {
+  BackgroundColor #dbeafe
+  BorderColor #3b82f6
+  FontColor #1e3a5f
+}
+skinparam database {
+  BackgroundColor #faf5ff
+  BorderColor #a855f7
+  FontColor #6b21a8
+}
+
+title <size:17><color:#1d4ed8>**רשת הגשת מבחנים — זרימת המערכת המלאה**</color></size>\\n<size:10><color:#64748b>10.99.0.0/24  |  Docker Compose  |  3 מצבי תעבורה</color></size>
+
+' ═══════════════════════════════════════════════════
+' PARTICIPANTS
+' ═══════════════════════════════════════════════════
+actor      "👤 דפדפן\nסטודנט"          as browser
+actor      "📊 לוח בקרה\nמרצה  :7777"  as prof
+
+box "📦 קונטיינר לקוח  (10.99.0.100+)" #fffbeb
+  participant "🏠 DHCP\n10.99.0.3"                          as dhcp    #f0fdf4
+  participant "🌐 nginx\n:80"                                as nginx   #fef9c3
+  participant "ws_bridge  :8081\nRUDP+Sync"                  as br_rudp  #f0fdf4
+  participant "ws_bridge_tcp  :8082\nTCP+Sync"               as br_tcps  #fdf4ff
+  participant "ws_bridge_tcp  :8083\nTCP+NoSync"             as br_tcpn  #fff7ed
+end box
+
+box "🌐 היררכיית DNS  RFC 1034/1035" #e0f2fe
+  participant "Resolver\n10.99.0.2"        as dns_r    #eff6ff
+  participant "Root\n10.99.0.10"           as dns_root #eff6ff
+  participant "TLD  .lan\n10.99.0.11"      as dns_tld  #eff6ff
+  participant "Auth  exam.lan\n10.99.0.12  AA=1" as dns_auth #f0fff4
+end box
+
+box "⚡ שרתי מבחן RUDP  UDP:9000" #f0fdf4
+  participant "rudp-server x3\n10.99.0.20-22\nexam_server.py" as rudp #e0fdf4
+end box
+
+box "🔌 שרתי מבחן TCP  TCP:9001" #fdf4ff
+  participant "tcp-sync\n10.99.0.23\nSYNC=1" as tcps #f3e8ff
+  participant "tcp-nosync\n10.99.0.24\nSYNC=0" as tcpn #fff7ed
+end box
+
+database "💾 exam-shared\nstart_at / exam / clients" as svol
+database "💾 answers-data"                            as avol
+participant "📋 Admin  :9999\n10.99.0.30"             as admin #fef2ff
+
+' ═══════════════════════════════════════════════════
+' ① DHCP — הפעלת קונטיינר
+' ═══════════════════════════════════════════════════
+== ① DHCP — הקצאת כתובת IP בעת הפעלת קונטיינר ==
+browser  -> dhcp  : DHCPDISCOVER
+dhcp    --> browser : DHCPACK  (IP 10.99.0.100+)
+note right of dhcp : טווח: 10.99.0.100-149\nחכירה: 100 שניות
+
+' ═══════════════════════════════════════════════════
+' ② טעינת ממשק המבחן
+' ═══════════════════════════════════════════════════
+== ② הדפדפן טוען את ממשק המבחן ==
+browser  -> nginx  : HTTP GET /  (Upgrade: websocket)
+nginx   --> browser : React SPA  (build סטטי)
+
+' ═══════════════════════════════════════════════════
+' ③ ניתוב WebSocket לפי מצב תעבורה
+' ═══════════════════════════════════════════════════
+== ③ nginx מנתב WebSocket לפי מצב תעבורה שנבחר ==
+browser  -> nginx   : WS connect  /ws              [RUDP+Sync]
+nginx    -> br_rudp : proxy_pass  :8081
+browser  -> nginx   : WS connect  /ws-tcp-sync     [TCP+Sync]
+nginx    -> br_tcps : proxy_pass  :8082
+browser  -> nginx   : WS connect  /ws-tcp-nosync   [TCP+NoSync]
+nginx    -> br_tcpn : proxy_pass  :8083
+
+' ═══════════════════════════════════════════════════
+' ④ פתרון DNS
+' ═══════════════════════════════════════════════════
+== ④ פתרון DNS  (הגשר מאתר את server.exam.lan) ==
+br_rudp  -> dns_r   : שאילתה: server.exam.lan A?  RD=1
+dns_r    -> dns_root : שאילתה איטרטיבית לשורש
+dns_root --> dns_r  : הפניה ← .lan NS 10.99.0.11
+dns_r    -> dns_tld : שאילתה: exam.lan. NS?
+dns_tld  --> dns_r  : הפניה ← exam.lan NS 10.99.0.12
+dns_r    -> dns_auth : שאילתה: server.exam.lan A?
+dns_auth --> dns_r  : תשובה  AA=1  A×3  [.20 / .21 / .22]
+dns_r   --> br_rudp : 3 רשומות A  (round-robin)
+
+' ═══════════════════════════════════════════════════
+' ⑤ הגשר מתחבר לשרת המבחן
+' ═══════════════════════════════════════════════════
+== ⑤ הגשר מתחבר לשרת המבחן ==
+group RUDP + Sync  [br_rudp ← שרת RUDP]
+  br_rudp  -> rudp : SYN  (לחיצת יד RUDP 3 כיוונים)
+  rudp    --> br_rudp : SYN-ACK
+  br_rudp  -> rudp : ACK
+  br_rudp  -> rudp : schedule_req  {rtt_samples:[min,med,max]}
+  note right of rudp : ExamSendCoordinator\nמחשב D_i = f(RTT_med, J_rtt)\nT_send_i = T_arr - D_i
+  rudp    --> br_rudp : schedule_resp  {start_at_ms}
+  br_rudp  -> rudp : exam_req
+end
+
+group TCP + Sync  [br_tcps ← tcp-sync]
+  br_tcps  -> tcps : TCP connect
+  br_tcps  -> tcps : exam_req  NL-JSON
+  note right of tcps : אותו ExamSendCoordinator\nשליחה מדורגת לפי D_i
+end
+
+group TCP + NoSync  [br_tcpn ← tcp-nosync]
+  br_tcpn  -> tcpn : TCP connect
+  br_tcpn  -> tcpn : exam_req  NL-JSON
+  note right of tcpn : SYNC=0\nשליחה מיידית\nבסיס השוואה
+end
+
+' ═══════════════════════════════════════════════════
+' ⑥ כתיבת זמן התחלה משותף
+' ═══════════════════════════════════════════════════
+== ⑥ כתיבת זמן התחלה משותף ==
+rudp  -> svol : כותב  start_at.txt  (T_arr)
+tcps  -> svol : כותב  start_at.txt  (SYNC=1)
+
+' ═══════════════════════════════════════════════════
+' ⑦ מסירת המבחן לדפדפן
+' ═══════════════════════════════════════════════════
+== ⑦ מסירת המבחן (הגעה מסונכרנת) ==
+rudp    --> br_rudp : ZS wire  b'ZS' + meta + exam_zlib\n(נשלח ב-T_send = T_arr - D_i)
+br_rudp  -> br_rudp : עיכוב מתקן עצמי\ntarget_ms = sent_at + RTT/2 + 5ms
+br_rudp --> browser : exam_resp  (מגיע ≈ T_arr  ±5ms)
+
+tcps    --> br_tcps : NL-JSON  exam_resp
+br_tcps --> browser : עיכוב עד T_arr ← העברה
+
+tcpn    --> br_tcpn : NL-JSON  exam_resp
+br_tcpn --> browser : העברה מיידית  (ללא סנכרון)
+
+' ═══════════════════════════════════════════════════
+' ⑧ שמירת תשובות
+' ═══════════════════════════════════════════════════
+== ⑧ שמירת תשובות ==
+browser  -> rudp  : submit_answers
+rudp     -> avol  : כותב  answers/{exam_id}/{client}.json
+tcps     -> avol  : כותב
+tcpn     -> avol  : כותב
+
+' ═══════════════════════════════════════════════════
+' ⑨ ניטור ושליטה
+' ═══════════════════════════════════════════════════
+== ⑨ ניטור Admin ושליטת מרצה ==
+admin    -> svol  : קורא  start_at / exam / clients
+admin    -> avol  : קורא  תשובות
+browser  -> admin : GET :9999  (לוח הוכחת סנכרון)
+prof     -> nginx : docker exec  netem / dns-mode
+
+@enduml

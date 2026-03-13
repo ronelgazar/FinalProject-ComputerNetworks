@@ -1,0 +1,93 @@
+@startuml 02_dns_iterative
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam sequenceArrowThickness 1.8
+skinparam sequenceArrowColor #2563eb
+skinparam participantBackgroundColor #eff6ff
+skinparam participantBorderColor #93c5fd
+skinparam participantBorderThickness 2
+skinparam participantFontColor #1e3a5f
+skinparam noteBackgroundColor #fefce8
+skinparam noteBorderColor #f59e0b
+
+autonumber "<b>( 0 )</b>"
+
+title <size:18><color:#1d4ed8>**DNS — רזולוציה איטרטיבית**</color></size>\n<size:11><color:#64748b>ws_bridge → Resolver → Root → TLD → Auth  |  RFC 1034/1035</color></size>
+
+participant "🔗 ws_bridge\n(בתוך client-N)" as bridge #fffbeb
+participant "🔍 dns-resolver\n10.99.0.2 UDP:53"  as res    #eff6ff
+participant "🌐 dns-root\n10.99.0.10 UDP:53"    as root   #f0f9ff
+participant "📂 dns-tld\n10.99.0.11 UDP:53"     as tld    #f0f9ff
+participant "✅ dns-auth\n10.99.0.12 UDP:53"    as auth   #f0fff4
+
+== שאילתה מהלקוח (RD=1) ==
+
+bridge -> res : **Q** server.exam.lan **A?**\nID=0x1234  RD=1  QDCOUNT=1\nQNAME=server.exam.lan  QTYPE=A
+
+note right of bridge
+  getaddrinfo("server.exam.lan")
+  משתמש ב-/etc/resolv.conf
+  nameserver 10.99.0.2
+end note
+
+activate res
+
+== Resolver → Root (RD=0, שאילתה איטרטיבית) ==
+
+res -> root : **Q** server.exam.lan **A?**\nID=0xAAAA  RD=0
+
+activate root
+root --> res : **REFERRAL** (AA=0)\nNSCOUNT=1: lan. 86400 NS ns1.lan.\nARCOUNT=1: ns1.lan. 86400 A 10.99.0.11
+
+note right of root
+  Root אינו סמכותי ל-lan.
+  מחזיר הפניה + glue record
+  AA=0, ANCOUNT=0
+end note
+deactivate root
+
+== Resolver → TLD (RD=0) ==
+
+res -> tld  : **Q** server.exam.lan **A?**\nID=0xBBBB  RD=0
+
+activate tld
+tld  --> res : **REFERRAL** (AA=0)\nNSCOUNT=1: exam.lan. 86400 NS ns1.exam.lan.\nARCOUNT=1: ns1.exam.lan. 86400 A 10.99.0.12
+
+note right of tld
+  TLD סמכותי ל-.lan
+  מחזיר הפניה ל-exam.lan.
+  עם glue record ל-10.99.0.12
+end note
+deactivate tld
+
+== Resolver → Auth (RD=0) ==
+
+res -> auth : **Q** server.exam.lan **A?**\nID=0xCCCC  RD=0
+
+activate auth
+auth --> res : **ANSWER** (AA=1)\nANCOUNT=3:\nserver.exam.lan 300 A 10.99.0.20\nserver.exam.lan 300 A 10.99.0.21\nserver.exam.lan 300 A 10.99.0.22
+
+note right of auth
+  Auth סמכותי ל-exam.lan.
+  AA=1, מחזיר 3 רשומות A
+  (round-robin load balancing)
+end note
+deactivate auth
+
+== Resolver שומר במטמון ומחזיר ==
+
+res -> res : שמירה במטמון TTL=300s:\n{ "server.exam.lan": [.20, .21, .22],\n  "expires": now+300 }
+
+res --> bridge : **ANSWER** RA=1\n3 רשומות A: [10.99.0.20, 10.99.0.21, 10.99.0.22]
+deactivate res
+
+note over bridge #f0fdf4
+  ws_bridge בוחר IP אחד (round-robin של OS)
+  ומחזיק אותו לכל session — אותו שרת עד סיום הבחינה
+end note
+
+@enduml

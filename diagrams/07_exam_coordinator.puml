@@ -1,0 +1,114 @@
+@startuml 07_exam_coordinator
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam sequenceArrowThickness 1.8
+skinparam sequenceArrowColor #0ea5e9
+skinparam participantBackgroundColor #f0f9ff
+skinparam participantBorderColor #38bdf8
+skinparam participantBorderThickness 2
+skinparam participantFontColor #0c4a6e
+skinparam noteBackgroundColor #fefce8
+skinparam noteBorderColor #f59e0b
+
+autonumber "<b>( 0 )</b>"
+
+title <size:18><color:#0369a1>**ExamSendCoordinator — שליחה מדורגת**</color></size>\n<size:11><color:#64748b>איסוף D_i → חישוב T_send → stagger → ZS wire format</color></size>
+
+actor       "👤 לקוח A\nRTT ~11ms"  as cA #dbeafe
+actor       "👤 לקוח B\nRTT ~39ms"  as cB #fce7f3
+participant "🖥 exam-server\n_coordinator" as ex #f0fdf4
+participant "💾 start_at.txt\n(exam-shared)" as vol #faf5ff
+
+== Pre-compression (בזמן חלון האיסוף) ==
+
+note over ex #f0fdf4
+  **לפני coordinator — בזמן קריאת exam_req:**
+  exam_json = json.dumps(exam)   → ~27ms
+  exam_zl   = zlib.compress()   → ~5ms
+  (מתבצע פעם אחת לכל handler, לפני wait_t_send)
+end note
+
+== חלון איסוף — 1.5 שניות ==
+
+cA -> ex : **exam_req**\nrtt_ms=11.2\nrtt_samples=[9,11,14]\noffset_ms=+1.2
+activate ex
+
+cB -> ex : **exam_req**\nrtt_ms=38.6\nrtt_samples=[35,39,44]\noffset_ms=−0.8
+
+note over ex #fff7ed
+  **COLLECTION_WINDOW = 1.5s**
+  מקבל rtt_samples מכל לקוח
+  רושם: _coordinator.register(client_id, D_i)
+  כל handler ממתין ל-wait_t_send()
+end note
+
+== חישוב D_i לכל לקוח ==
+
+note over ex #fefce8
+  **חישוב D_i פר-לקוח:**
+
+  לקוח A (עם offset):
+    s = sorted([9,11,14])  → RTT_med=11, J_rtt=5
+    d_down = 11/2 − 1.2 = 4.3
+    D_A = max(1, 4.3 + 5/2) = **6.8 ms**
+
+  לקוח B (עם offset):
+    s = sorted([35,39,44]) → RTT_med=39, J_rtt=9
+    d_down = 39/2 − (−0.8) = 20.3
+    D_B = max(1, 20.3 + 9/2) = **24.8 ms**
+end note
+
+== עיגון T_arr ==
+
+ex -> vol : קריאת start_at.txt
+
+note right of ex
+  T_arr = start_at_ms (מה-volume)
+  אם קרוב מדי:
+  T_arr = now + max(D_i) + N*C + M
+end note
+
+== חישוב T_send ומיון ==
+
+note over ex #f0f9ff
+  **T_send,i = T_arr − D_i**
+
+  T_send,B = T_arr − 24.8  ← שולח **ראשון** (D גדול)
+  T_send,A = T_arr − 6.8   ← שולח **שני**  (D קטן)
+
+  Δ_k = T_send,A − T_send,B − C = 18.0 − C ms
+  (Δ_k מחושב ומתועד בלבד — לא נשמר כ-sleep)
+
+  **coordinator.set_event() → כל handler מתעורר**
+  כל handler ישן באופן עצמאי עד T_send_i שלו:
+    wait_ms = T_send_i − now_ms
+    asyncio.sleep(wait_ms / 1000)
+end note
+
+== שליחות מדורגות ==
+
+ex -> cB : asyncio.sleep(T_send,B − now)\n**ZS wire** → לקוח B\nserver_sent_at_ms = T_send,B_actual
+
+note right of ex
+  **ZS Wire Format:**
+  b'ZS' + uint16(len(meta))
+       + meta_json
+       + exam_zl (pre-compressed)
+  meta = {server_sent_at_ms, max_rtt_ms, my_rtt_ms}
+  **server_sent_at_ms מוחתם לפני השליחה**
+end note
+
+ex -> cA : asyncio.sleep(T_send,A − now)\n**ZS wire** → לקוח A\nserver_sent_at_ms = T_send,A_actual
+
+deactivate ex
+
+note over cA, cB #f0fdf4
+  שני הלקוחות יקבלו את החבילה ב-Bridge Hold
+  ויועברו לדפדפן ב-T_arr ± 5ms
+end note
+
+@enduml

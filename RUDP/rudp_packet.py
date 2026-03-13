@@ -12,12 +12,13 @@ Header layout (14 bytes total):
   14      len   payload
 
 Flags:
-  SYN  = 0x01
-  ACK  = 0x02
-  FIN  = 0x04
-  DATA = 0x08
-  RST  = 0x10
-  PING = 0x20
+  SYN     = 0x01
+  ACK     = 0x02
+  FIN     = 0x04
+  DATA    = 0x08
+  RST     = 0x10
+  PING    = 0x20
+  MSG_END = 0x40   — last chunk of an application message (enables reassembly)
 """
 from __future__ import annotations
 import struct
@@ -26,12 +27,13 @@ from dataclasses import dataclass, field
 HEADER_SIZE = 14   # bytes before payload
 
 # Flag constants
-SYN  = 0x01
-ACK  = 0x02
-FIN  = 0x04
-DATA = 0x08
-RST  = 0x10
-PING = 0x20
+SYN     = 0x01
+ACK     = 0x02
+FIN     = 0x04
+DATA    = 0x08
+RST     = 0x10
+PING    = 0x20
+MSG_END = 0x40   # last chunk of an application message
 
 # struct format: seq(I) ack(I) flags(B) window(B) len(H) crc(H)
 #                4      4      1        1         2     2   = 14 bytes
@@ -63,12 +65,13 @@ class RudpPacket:
     payload: bytes = field(default_factory=bytes)
 
     # ── Flag helpers ──────────────────────────────────────────────
-    def is_syn(self)  -> bool: return bool(self.flags & SYN)
-    def is_ack(self)  -> bool: return bool(self.flags & ACK)
-    def is_fin(self)  -> bool: return bool(self.flags & FIN)
-    def is_data(self) -> bool: return bool(self.flags & DATA)
-    def is_rst(self)  -> bool: return bool(self.flags & RST)
-    def is_ping(self) -> bool: return bool(self.flags & PING)
+    def is_syn(self)     -> bool: return bool(self.flags & SYN)
+    def is_ack(self)     -> bool: return bool(self.flags & ACK)
+    def is_fin(self)     -> bool: return bool(self.flags & FIN)
+    def is_data(self)    -> bool: return bool(self.flags & DATA)
+    def is_rst(self)     -> bool: return bool(self.flags & RST)
+    def is_ping(self)    -> bool: return bool(self.flags & PING)
+    def is_msg_end(self) -> bool: return bool(self.flags & MSG_END)
 
     # ── Serialisation ─────────────────────────────────────────────
     def to_bytes(self) -> bytes:
@@ -100,7 +103,8 @@ class RudpPacket:
     def __repr__(self) -> str:
         flag_names = []
         for bit, name in ((SYN,'SYN'),(ACK,'ACK'),(FIN,'FIN'),
-                          (DATA,'DATA'),(RST,'RST'),(PING,'PING')):
+                          (DATA,'DATA'),(RST,'RST'),(PING,'PING'),
+                          (MSG_END,'MSG_END')):
             if self.flags & bit:
                 flag_names.append(name)
         return (f"RudpPacket(seq={self.seq}, ack={self.ack}, "

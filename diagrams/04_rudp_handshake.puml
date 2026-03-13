@@ -1,0 +1,94 @@
+@startuml 04_rudp_handshake
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam sequenceArrowThickness 1.8
+skinparam sequenceArrowColor #7c3aed
+skinparam participantBackgroundColor #faf5ff
+skinparam participantBorderColor #c084fc
+skinparam participantBorderThickness 2
+skinparam participantFontColor #4c1d95
+skinparam noteBackgroundColor #fefce8
+skinparam noteBorderColor #f59e0b
+
+autonumber "<b>( 0 )</b>"
+
+title <size:18><color:#7c3aed>**RUDP — 3-Way Handshake**</color></size>\n<size:11><color:#64748b>Header: seq(4) ack(4) flags(1) window(1) len(2) crc16(2) = 14 bytes</color></size>
+
+participant "🔗 ws_bridge\n(client-N)" as bridge #fffbeb
+participant "🖥 exam-server\n10.99.0.2x UDP:9000" as server #f0fdf4
+
+note over bridge, server #f0f9ff
+  **RUDP Header Format (14 bytes):**
+  | seq (4B) | ack (4B) | flags (1B) | window (1B) | len (2B) | crc16 (2B) |
+  Flags: SYN=0x01  ACK=0x02  FIN=0x04  DATA=0x08  RST=0x10  PING=0x20  MSG_END=0x40
+end note
+
+== חיבור + MSS Negotiation ==
+
+note right of bridge
+  t1 = time.monotonic()
+  (לחישוב handshake_rtt_ms)
+end note
+
+bridge -> server : **[SYN]**\nseq=0  ack=0  flags=0x01\nwindow=64  len=2\npayload=0x04B0 (1200 — MSS)\ncrc16=<checksum>
+
+activate server
+
+server --> bridge : **[SYN+ACK]**\nseq=0  ack=1  flags=0x03\nwindow=64  len=2\npayload=0x04B0 (1200 — MSS)\ncrc16=<checksum>
+
+note right of server
+  שרת מקצה RudpSocket חדש
+  מאתחל send_buf, recv_buf
+  window=64 = RECV_BUF_SIZE (64 פקטות)
+  **MSS negotiation:**
+  remote_mss = int.from_bytes(payload[:2])
+  conn._mss  = min(1200, remote_mss) = **1200**
+end note
+
+bridge -> server : **[ACK]**\nseq=1  ack=1  flags=0x02\nwindow=64  len=0\ncrc16=<checksum>
+
+note right of bridge
+  **MSS negotiation (client side):**
+  remote_mss = int.from_bytes(syn_ack.payload[:2])
+  conn._mss  = min(1200, remote_mss) = **1200**
+  כל DATA chunk: payload ≤ 1200 bytes
+end note
+
+deactivate server
+
+== מדידת RTT של ה-Handshake ==
+
+note right of bridge #f0fdf4
+  t2 = time.monotonic()
+  **handshake_rtt_ms** = (t2 − t1) × 1000
+  נשמר ב-RudpSocket
+  ומוזרק ל-hello בהמשך
+end note
+
+== מצב חיבור — Sliding Window מוכן ==
+
+note over bridge, server #f0fdf4
+  **חיבור נוצר בהצלחה ✓**
+  cwnd = 1  (Slow Start)
+  ssthresh = 32
+  effective_window = min(cwnd, peer_window, WINDOW_CAP=32)
+
+  Timeout לכל packet: 500ms, max 5 retries → RudpTimeout
+  לאחר 5 retries: RST + סגירת חיבור
+end note
+
+== סגירת חיבור (עתידית) ==
+
+bridge ->  server : **[FIN]**\nseq=N  flags=0x04
+server --> bridge : **[FIN+ACK]**\nack=N+1  flags=0x06
+
+note over bridge, server
+  FIN מסיים חיבור בצורה מסודרת
+  (לדוגמה: סגירת דפדפן → WebSocket close → bridge close → RUDP FIN)
+end note
+
+@enduml

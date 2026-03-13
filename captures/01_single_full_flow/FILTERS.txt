@@ -1,0 +1,17 @@
+# Wireshark filters for 01_single_full_flow
+# Open: wireshark C:\Users\ronelgazar\Documents\University\year2\Semester1\Computer Networks\final\FinalProject-ComputerNetworks\captures\01_single_full_flow\*.pcap
+
+#  DHCP exchange
+#    bootp
+#  DNS iterative chain (1st query)
+#    dns  [open dns-root/tld/auth/resolver.pcap together]
+#  DNS cached reply  (2nd query)
+#    dns  [only dns-resolver.pcap has traffic]
+#  RUDP handshake
+#    udp.port == 9000 && (udp[14] & 0x03 != 0)
+#  RUDP data + ACKs
+#    udp.port == 9000
+#  NTP sync rounds
+#    udp.port == 9000  [look for short DATA exchanges early]
+#  Full exam flow (combined)
+#    udp.port == 9000  [client-1.pcap + rudp-server-1.pcap]

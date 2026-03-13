@@ -1,0 +1,115 @@
+@startuml 05_rudp_sliding_window
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam sequenceArrowThickness 1.8
+skinparam sequenceArrowColor #7c3aed
+skinparam participantBackgroundColor #faf5ff
+skinparam participantBorderColor #c084fc
+skinparam participantBorderThickness 2
+skinparam participantFontColor #4c1d95
+skinparam noteBackgroundColor #fefce8
+skinparam noteBorderColor #f59e0b
+
+autonumber "<b>( 0 )</b>"
+
+title <size:18><color:#7c3aed>**RUDP — Sliding Window, Chunking & Congestion Control**</color></size>\n<size:11><color:#64748b>AIMD | Slow Start | Fast Retransmit | MSG_END chunking | Flow Control</color></size>
+
+participant "🔗 ws_bridge\n(sender)" as sender #fffbeb
+participant "🖥 exam-server\n(receiver)" as recv   #f0fdf4
+
+== Chunking — פיצול הודעה גדולה ==
+
+note over sender #faf5ff
+  **_mss = 1200 bytes** (מנוהל בלחיצת יד SYN)
+  MAX_PAYLOAD=1200 → min(local, remote) = agreed _mss
+  exam_resp (~8KB) → ~7 chunks
+  chunk אחרון נושא: flags |= MSG_END (0x40)
+  recv() צובר עד MSG_END → מחזיר הודעה שלמה
+end note
+
+sender -> recv : **[DATA]** seq=1  flags=0x0A  payload=chunk_1 (1200B)
+sender -> recv : **[DATA]** seq=2  flags=0x0A  payload=chunk_2 (1200B)
+sender -> recv : **[DATA]** seq=3  flags=0x4A  payload=chunk_last  **MSG_END**
+
+recv  --> sender : **[ACK]** ack=4  window=63  (recv_buf 63 slots free)
+
+note right of recv
+  **Flow Control:**
+  window field = free recv-buffer slots
+  RECV_BUF_SIZE = 64
+  effective_window = min(cwnd, peer_window, 32)
+
+  **ACK convention (next-expected):**
+  ack=N → received up to seq N-1, expecting N
+  (code: ack = self._recv_seq)
+end note
+
+== Slow Start → AIMD ==
+
+group Slow Start [cwnd < ssthresh=32]
+  note over sender #f0fdf4
+    cwnd=1 → ACK → cwnd=2
+    cwnd=2 → ACK → cwnd=4
+    ...מכפיל בכל RTT עד ssthresh=32
+  end note
+  sender -> recv : **[DATA]** seq=4
+  recv  --> sender : **[ACK]** ack=5
+  sender -> recv : **[DATA]** seq=5
+  sender -> recv : **[DATA]** seq=6
+  recv  --> sender : **[ACK]** ack=7
+end group
+
+group AIMD [cwnd ≥ ssthresh]
+  note over sender #fefce8
+    cwnd += 1/cwnd לכל ACK חדש
+    (קצב גידול לינארי)
+    cwnd = min(cwnd, WINDOW_CAP=32)  ← תקרה קשיחה
+    rtt_ms = 0.875·rtt_ms + 0.125·sample  ← EWMA RTT
+  end note
+  sender -> recv : **[DATA]** seq=7
+  recv  --> sender : **[ACK]** ack=8
+end group
+
+== Fast Retransmit — 3 Dup ACKs ==
+
+group Fast Retransmit [אובדן packet]
+  sender -> recv : **[DATA]** seq=8
+  sender -> recv : **[DATA]** seq=9   '← אבד
+  sender -> recv : **[DATA]** seq=10
+  recv  --> sender : **[ACK]** ack=9  (dup 1)
+  recv  --> sender : **[ACK]** ack=9  (dup 2)
+  recv  --> sender : **[ACK]** ack=9  (dup 3)
+
+  note right of sender #fff7ed
+    3 dup ACKs → Fast Retransmit:
+    ssthresh = max(cwnd / 2, 1)
+    cwnd     = ssthresh
+    שולח מחדש seq=9 מיידית
+    (ללא המתנה ל-timeout)
+    ack=9 = next-expected → חסר seq=9
+  end note
+
+  sender -> recv : **[DATA]** seq=9  (retransmit)
+  recv  --> sender : **[ACK]** ack=11
+end group
+
+== Timeout — Go-Back-N ==
+
+group Timeout [500ms ללא ACK]
+  sender -> recv : **[DATA]** seq=11
+  note right of sender #fff1f2
+    500ms ללא ACK:
+    ssthresh = max(cwnd / 2, 1)
+    cwnd     = 1
+    Go-Back-N: שולח מחדש מ-seq=11
+    max 5 retries → RudpTimeout
+  end note
+  sender -> recv : **[DATA]** seq=11  (retry 1)
+  recv  --> sender : **[ACK]** ack=12
+end group
+
+@enduml

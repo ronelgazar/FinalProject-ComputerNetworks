@@ -1,0 +1,21 @@
+# Wireshark filters for 08_rudp_sliding_window
+# Open: wireshark C:\Users\ronelgazar\Documents\University\year2\Semester1\Computer Networks\final\FinalProject-ComputerNetworks\captures\08_rudp_sliding_window\*.pcap
+
+#  All RUDP traffic
+#    udp.port == 9000
+#  DATA chunks only  (flags & 0x08)
+#    udp.port == 9000 && (udp[8] & 8 != 0)
+#  Last DATA chunk   (MSG_END, flags & 0x40)
+#    udp.port == 9000 && (udp[8] & 0x40 != 0)
+#  ACK-only packets  (flags == 0x02, no payload)
+#    udp.port == 9000 && udp[8] == 0x02
+#  SYN / SYN-ACK handshake (flags & 0x01)
+#    udp.port == 9000 && (udp[8] & 0x01 != 0)
+#  Read questions from payload
+#    click DATA packet -> Data tab -> byte offset 14 = RUDP payload (zlib-compressed JSON); 'Follow UDP Stream' reassembles all chunks
+#  Window-field changes (byte 9 of UDP payload)
+#    Hex view: udp[9] = receiver advertised window (64 = full, drops as recv queue fills)
+#  Slow-start batches — look at packet timing
+#    filter DATA packets; Time column shows groups: 1 pkt, 50ms gap, 2 pkts, 50ms gap, 4 pkts, 50ms gap, 8 pkts, 50ms gap, rest
+#  Extract DATA times with tshark
+#    tshark -r rudp-server-1.pcap -Y "udp.port==9000 && (udp[8] & 8 != 0)" -T fields -e frame.time_relative -e udp.length > data_chunks.csv   # rows show 50ms-spaced batches: 1, 2, 4, 8, rest

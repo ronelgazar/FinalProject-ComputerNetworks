@@ -1,0 +1,177 @@
+@startuml 11_sync_full_flow
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam sequenceArrowThickness 1.8
+skinparam sequenceArrowColor #0ea5e9
+skinparam participantBackgroundColor #f0f9ff
+skinparam participantBorderColor #38bdf8
+skinparam participantBorderThickness 2
+skinparam participantFontColor #0c4a6e
+skinparam noteBackgroundColor #fefce8
+skinparam noteBorderColor #f59e0b
+
+autonumber "<b>( 0 )</b>"
+
+title <size:18><color:#0369a1>**זרימת האפליקציה המלאה — חיבור → מדידה → חישוב → שליחה מסונכרנת**</color></size>\n<size:11><color:#64748b>MSS negotiation · 12 NTP rounds · D_i · T_send · Bridge Hold</color></size>
+
+actor       "👤 לקוח A\n(RTT ~11ms)"  as cA  #dbeafe
+actor       "👤 לקוח B\n(RTT ~39ms)"  as cB  #fce7f3
+participant "🔗 bridge A\n(:8081)"    as bA  #fffbeb
+participant "🔗 bridge B\n(:8081)"    as bB  #fff7ed
+participant "🖥 exam-server\n(RUDP)"  as srv #f0fdf4
+participant "💾 start_at.txt"         as vol #faf5ff
+
+' ═══════════════════════════════════════════════════
+== שלב א׳ — לחיצת יד + MSS ==
+' ═══════════════════════════════════════════════════
+
+cA -> bA : WebSocket connect\n/ws
+cB -> bB : WebSocket connect\n/ws
+
+bA -> srv : **SYN**\npayload = 1200 (MSS)
+srv --> bA : **SYN-ACK**\npayload = 1200 (MSS)\nagreed = min(1200,1200) = **1200**
+bA -> srv : **ACK**
+
+note right of bA
+  **MSS negotiation:**
+  local=1200  remote=1200
+  agreed _mss = **1200 bytes**
+  handshake_rtt_ms = T_SYN-ACK − T_SYN
+end note
+
+bB -> srv : **SYN** payload=1200
+srv --> bB : **SYN-ACK** payload=1200
+bB -> srv : **ACK**
+
+' ═══════════════════════════════════════════════════
+== שלב ב׳ — 12 סבבי NTP (מסוכם) ==
+' ═══════════════════════════════════════════════════
+
+group 12 NTP Rounds [לקוח A]
+  loop 12 פעמים
+    cA -> bA : time_req {t1}
+    bA -> srv : RUDP DATA [time_req]
+    srv --> bA : RUDP DATA [time_resp: T_server]
+    bA --> cA : time_resp {server_now_ms}
+    note right of cA
+      rtt_i    = t4 − t1
+      offset_i = T_server − (t1+t4)/2
+    end note
+  end loop
+end group
+
+note over cA #f0fdf4
+  **תוצאות לקוח A:**
+  rtt_samples = [9, 11, 14]
+  offset_ms   = +1.2 ms
+end note
+
+group 12 NTP Rounds [לקוח B]
+  loop 12 פעמים
+    cB -> bB : time_req {t1}
+    bB -> srv : RUDP DATA [time_req]
+    srv --> bB : RUDP DATA [time_resp: T_server]
+    bB --> cB : time_resp {server_now_ms}
+  end loop
+end group
+
+note over cB #fce7f3
+  **תוצאות לקוח B:**
+  rtt_samples = [35, 39, 44]
+  offset_ms   = −0.8 ms
+end note
+
+' ═══════════════════════════════════════════════════
+== שלב ג׳ — schedule_req + חלון איסוף 1.5s ==
+' ═══════════════════════════════════════════════════
+
+cA -> bA : **schedule_req**\nrtt_samples=[9,11,14]\noffset_ms=+1.2
+bA -> srv : RUDP DATA [schedule_req]
+activate srv
+
+cB -> bB : **schedule_req**\nrtt_samples=[35,39,44]\noffset_ms=−0.8
+bB -> srv : RUDP DATA [schedule_req]
+
+note over srv #fff7ed
+  **COLLECTION_WINDOW = 1.5s**
+  כל handler ממתין ל-wait_t_send()
+  Coordinator מקבל D_i מכל לקוח
+end note
+
+srv -> vol : קריאת start_at.txt
+
+' ═══════════════════════════════════════════════════
+== שלב ד׳ — חישוב D_i ו-T_send ==
+' ═══════════════════════════════════════════════════
+
+note over srv #fefce8
+  **חישוב D_i:**
+
+  לקוח A:
+    s = sorted([9,11,14]) → RTT_med=11, J=5
+    d_down = 11/2 − 1.2 = 4.3
+    **D_A = max(1, 4.3 + 2.5) = 6.8 ms**
+
+  לקוח B:
+    s = sorted([35,39,44]) → RTT_med=39, J=9
+    d_down = 39/2 − (−0.8) = 20.3
+    **D_B = max(1, 20.3 + 4.5) = 24.8 ms**
+
+  T_arr = start_at_ms  (מה-volume)
+
+  T_send,B = T_arr − 24.8  ← **ראשון**
+  T_send,A = T_arr − 6.8   ← **שני**
+end note
+
+' ═══════════════════════════════════════════════════
+== שלב ה׳ — שליחה מדורגת ==
+' ═══════════════════════════════════════════════════
+
+srv -> bB : asyncio.sleep(T_send,B − now)\n**ZS wire → לקוח B**\nserver_sent_at_ms = T_send,B
+
+note right of srv
+  **ZS Wire Format:**
+  b'ZS' + uint16(meta_len)
+       + meta_json (server_sent_at_ms,
+                    max_rtt_ms, D_i)
+       + exam_zl (pre-compressed)
+end note
+
+srv -> bA : asyncio.sleep(T_send,A − now)\n**ZS wire → לקוח A**\nserver_sent_at_ms = T_send,A
+
+deactivate srv
+
+' ═══════════════════════════════════════════════════
+== שלב ו׳ — Bridge Hold (תיקון עצמי) ==
+' ═══════════════════════════════════════════════════
+
+activate bB
+bB -> bB : **target_ms** = server_sent_at_ms\n           + max_rtt/2 + 5ms\n**hold_ms** = max(0, target_ms − now)
+bB --> cB : asyncio.sleep(hold_ms)\n**exam_resp** → דפדפן B\nbridge_forwarded_at_ms ≈ T_arr
+deactivate bB
+
+activate bA
+bA -> bA : target_ms = server_sent_at_ms\n           + max_rtt/2 + 5ms\nhold_ms = max(0, target_ms − now)
+bA --> cA : asyncio.sleep(hold_ms)\n**exam_resp** → דפדפן A\nbridge_forwarded_at_ms ≈ T_arr
+deactivate bA
+
+' ═══════════════════════════════════════════════════
+== תוצאה ==
+' ═══════════════════════════════════════════════════
+
+note over cA, cB #f0fdf4
+  **|forwarded_A − forwarded_B| < 10ms  ✓**
+
+  זמן הגעה = T_send,i + D_i + hold_ms
+            = (T_arr − D_i) + D_i + 0
+            = **T_arr ± 5ms**
+
+  שני הדפדפנים מקבלים את הבחינה באותו רגע,
+  ללא תלות ב-RTT האישי.
+end note
+
+@enduml

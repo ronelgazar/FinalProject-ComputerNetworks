@@ -1,0 +1,1503 @@
+{
+  "exam_id": "exam-networks-2024-big",
+  "title": "בחינת מבוא לרשתות מחשבים — מלאה",
+  "instructions": "ענו על כל השאלות. שאלות רב-ברירה: 4 נקודות. שאלות פתוחות קצרות: 6 נקודות. שאלות פתוחות ארוכות: 10 נקודות. זמן בחינה: 3 שעות.",
+  "duration_sec": 10800,
+  "questions": [
+    {
+      "id": "q1",
+      "type": "mcq",
+      "prompt": "כמה שכבות יש במודל OSI?",
+      "options": [
+        {
+          "id": "a",
+          "text": "4"
+        },
+        {
+          "id": "b",
+          "text": "5"
+        },
+        {
+          "id": "c",
+          "text": "7"
+        },
+        {
+          "id": "d",
+          "text": "9"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q2",
+      "type": "mcq",
+      "prompt": "איזו שכבה אחראית לניתוב פקטות?",
+      "options": [
+        {
+          "id": "a",
+          "text": "שכבת הקישור (Data Link)"
+        },
+        {
+          "id": "b",
+          "text": "שכבת הרשת (Network)"
+        },
+        {
+          "id": "c",
+          "text": "שכבת התחבורה (Transport)"
+        },
+        {
+          "id": "d",
+          "text": "שכבת היישום (Application)"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q3",
+      "type": "mcq",
+      "prompt": "מה ההבדל העיקרי בין TCP ל-UDP?",
+      "options": [
+        {
+          "id": "a",
+          "text": "TCP מהיר יותר"
+        },
+        {
+          "id": "b",
+          "text": "TCP שירות אמין עם ACK וסידור; UDP לא"
+        },
+        {
+          "id": "c",
+          "text": "UDP תומך ברבוי נקודות"
+        },
+        {
+          "id": "d",
+          "text": "UDP משתמש ב-IP; TCP לא"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q4",
+      "type": "mcq",
+      "prompt": "מה גודל כתובת IPv4?",
+      "options": [
+        {
+          "id": "a",
+          "text": "16 סיביתות"
+        },
+        {
+          "id": "b",
+          "text": "32 סיביתות"
+        },
+        {
+          "id": "c",
+          "text": "64 סיביתות"
+        },
+        {
+          "id": "d",
+          "text": "128 סיביתות"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q5",
+      "type": "mcq",
+      "prompt": "מה גודל כתובת IPv6?",
+      "options": [
+        {
+          "id": "a",
+          "text": "32 סיביתות"
+        },
+        {
+          "id": "b",
+          "text": "64 סיביתות"
+        },
+        {
+          "id": "c",
+          "text": "128 סיביתות"
+        },
+        {
+          "id": "d",
+          "text": "256 סיביתות"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q6",
+      "type": "mcq",
+      "prompt": "מה פורט סטנדרטי של HTTP?",
+      "options": [
+        {
+          "id": "a",
+          "text": "21"
+        },
+        {
+          "id": "b",
+          "text": "22"
+        },
+        {
+          "id": "c",
+          "text": "80"
+        },
+        {
+          "id": "d",
+          "text": "443"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q7",
+      "type": "mcq",
+      "prompt": "מה פורט סטנדרטי של HTTPS?",
+      "options": [
+        {
+          "id": "a",
+          "text": "80"
+        },
+        {
+          "id": "b",
+          "text": "443"
+        },
+        {
+          "id": "c",
+          "text": "8080"
+        },
+        {
+          "id": "d",
+          "text": "8443"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q8",
+      "type": "mcq",
+      "prompt": "איזה פרוטוקול מתרגם שמות דומיין לכתובות IP?",
+      "options": [
+        {
+          "id": "a",
+          "text": "DHCP"
+        },
+        {
+          "id": "b",
+          "text": "ARP"
+        },
+        {
+          "id": "c",
+          "text": "DNS"
+        },
+        {
+          "id": "d",
+          "text": "NAT"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q9",
+      "type": "mcq",
+      "prompt": "מה תפקיד ARP?",
+      "options": [
+        {
+          "id": "a",
+          "text": "המרת שמות דומיין ל-IP"
+        },
+        {
+          "id": "b",
+          "text": "המרת כתובות IP ל-MAC"
+        },
+        {
+          "id": "c",
+          "text": "הקצאת כתובות IP דינמית"
+        },
+        {
+          "id": "d",
+          "text": "הצפנת תעבורת"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q10",
+      "type": "mcq",
+      "prompt": "איזו שיטה שולחת לכל המארחים?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Unicast"
+        },
+        {
+          "id": "b",
+          "text": "Multicast"
+        },
+        {
+          "id": "c",
+          "text": "Broadcast"
+        },
+        {
+          "id": "d",
+          "text": "Anycast"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q11",
+      "type": "mcq",
+      "prompt": "TTL ב-DNS משמעו?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Time To Live — כמה זמן רשומה נשמרת במטמון"
+        },
+        {
+          "id": "b",
+          "text": "Total Transfer Length"
+        },
+        {
+          "id": "c",
+          "text": "מספר ניתובים מקסימלי"
+        },
+        {
+          "id": "d",
+          "text": "זמן המתנה מרבי"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q12",
+      "type": "mcq",
+      "prompt": "שכבות TCP/IP?",
+      "options": [
+        {
+          "id": "a",
+          "text": "3"
+        },
+        {
+          "id": "b",
+          "text": "4"
+        },
+        {
+          "id": "c",
+          "text": "5"
+        },
+        {
+          "id": "d",
+          "text": "7"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q13",
+      "type": "mcq",
+      "prompt": "תפקיד NAT?",
+      "options": [
+        {
+          "id": "a",
+          "text": "הצפנת תעבורה"
+        },
+        {
+          "id": "b",
+          "text": "המרת כתובות IP פרטיות לציבוריות"
+        },
+        {
+          "id": "c",
+          "text": "ניתוב פקטות"
+        },
+        {
+          "id": "d",
+          "text": "הקצאת MAC"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q14",
+      "type": "mcq",
+      "prompt": "אלגוריתם של OSPF?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Distance Vector"
+        },
+        {
+          "id": "b",
+          "text": "Bellman-Ford"
+        },
+        {
+          "id": "c",
+          "text": "Dijkstra (Link State)"
+        },
+        {
+          "id": "d",
+          "text": "Spanning Tree"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q15",
+      "type": "mcq",
+      "prompt": "מה RTT?",
+      "options": [
+        {
+          "id": "a",
+          "text": "זמן עבור אחד כיוון"
+        },
+        {
+          "id": "b",
+          "text": "זמן כולל מעזיבת פקטה עד אישור"
+        },
+        {
+          "id": "c",
+          "text": "קצב העברה בשניה"
+        },
+        {
+          "id": "d",
+          "text": "מספר נתבים"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q16",
+      "type": "mcq",
+      "prompt": "מנגנון TCP לשליטה בזרימה?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Token Bucket"
+        },
+        {
+          "id": "b",
+          "text": "Sliding Window"
+        },
+        {
+          "id": "c",
+          "text": "Stop-and-Wait"
+        },
+        {
+          "id": "d",
+          "text": "Leaky Bucket"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q17",
+      "type": "mcq",
+      "prompt": "מה קורה עם TCP גודוש?",
+      "options": [
+        {
+          "id": "a",
+          "text": "מגדיל CWND"
+        },
+        {
+          "id": "b",
+          "text": "מקטין חלון שליחה"
+        },
+        {
+          "id": "c",
+          "text": "מחסל את הקישור"
+        },
+        {
+          "id": "d",
+          "text": "עובר UDP"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q18",
+      "type": "mcq",
+      "prompt": "3-way handshake?",
+      "options": [
+        {
+          "id": "a",
+          "text": "SYN, SYN+ACK, ACK"
+        },
+        {
+          "id": "b",
+          "text": "SYN, ACK, FIN"
+        },
+        {
+          "id": "c",
+          "text": "HELLO, READY, GO"
+        },
+        {
+          "id": "d",
+          "text": "REQ, RES, ACK"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q19",
+      "type": "mcq",
+      "prompt": "פורט SSH?",
+      "options": [
+        {
+          "id": "a",
+          "text": "20"
+        },
+        {
+          "id": "b",
+          "text": "21"
+        },
+        {
+          "id": "c",
+          "text": "22"
+        },
+        {
+          "id": "d",
+          "text": "23"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q20",
+      "type": "mcq",
+      "prompt": "ICMP שולח מי?",
+      "options": [
+        {
+          "id": "a",
+          "text": "ping בלבד"
+        },
+        {
+          "id": "b",
+          "text": "traceroute בלבד"
+        },
+        {
+          "id": "c",
+          "text": "שניהם"
+        },
+        {
+          "id": "d",
+          "text": "אף אחד"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q21",
+      "type": "mcq",
+      "prompt": "Subnet Mask משמעו?",
+      "options": [
+        {
+          "id": "a",
+          "text": "כתובת שרת"
+        },
+        {
+          "id": "b",
+          "text": "מסכה שמגדירה אילו סיביתות הן רשת ואילו מארח"
+        },
+        {
+          "id": "c",
+          "text": "פרוטוקול הסתרה"
+        },
+        {
+          "id": "d",
+          "text": "סוג firewall"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q22",
+      "type": "mcq",
+      "prompt": "כמה כתובות מארח ב-/24?",
+      "options": [
+        {
+          "id": "a",
+          "text": "254"
+        },
+        {
+          "id": "b",
+          "text": "255"
+        },
+        {
+          "id": "c",
+          "text": "256"
+        },
+        {
+          "id": "d",
+          "text": "512"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q23",
+      "type": "mcq",
+      "prompt": "Loopback סטנדרטי?",
+      "options": [
+        {
+          "id": "a",
+          "text": "0.0.0.0"
+        },
+        {
+          "id": "b",
+          "text": "127.0.0.1"
+        },
+        {
+          "id": "c",
+          "text": "192.168.0.1"
+        },
+        {
+          "id": "d",
+          "text": "255.255.255.255"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q24",
+      "type": "mcq",
+      "prompt": "הקצאת IP אוטומטית?",
+      "options": [
+        {
+          "id": "a",
+          "text": "DNS"
+        },
+        {
+          "id": "b",
+          "text": "ARP"
+        },
+        {
+          "id": "c",
+          "text": "DHCP"
+        },
+        {
+          "id": "d",
+          "text": "ICMP"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q25",
+      "type": "mcq",
+      "prompt": "פורט DHCP שרת?",
+      "options": [
+        {
+          "id": "a",
+          "text": "53"
+        },
+        {
+          "id": "b",
+          "text": "67"
+        },
+        {
+          "id": "c",
+          "text": "68"
+        },
+        {
+          "id": "d",
+          "text": "69"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q26",
+      "type": "mcq",
+      "prompt": "פורט DNS?",
+      "options": [
+        {
+          "id": "a",
+          "text": "23"
+        },
+        {
+          "id": "b",
+          "text": "53"
+        },
+        {
+          "id": "c",
+          "text": "67"
+        },
+        {
+          "id": "d",
+          "text": "80"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q27",
+      "type": "mcq",
+      "prompt": "מה לא מוצפן?",
+      "options": [
+        {
+          "id": "a",
+          "text": "HTTPS"
+        },
+        {
+          "id": "b",
+          "text": "SSH"
+        },
+        {
+          "id": "c",
+          "text": "FTP"
+        },
+        {
+          "id": "d",
+          "text": "TLS"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q28",
+      "type": "mcq",
+      "prompt": "MTU הוא?",
+      "options": [
+        {
+          "id": "a",
+          "text": "פקטות מקסימלי בשנייה"
+        },
+        {
+          "id": "b",
+          "text": "גודל מקסימלי של פקטה"
+        },
+        {
+          "id": "c",
+          "text": "נתבים מקסימליים"
+        },
+        {
+          "id": "d",
+          "text": "רוחב פס מקסימלי"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q29",
+      "type": "mcq",
+      "prompt": "MTU סטנדרטי Ethernet?",
+      "options": [
+        {
+          "id": "a",
+          "text": "512 B"
+        },
+        {
+          "id": "b",
+          "text": "1024 B"
+        },
+        {
+          "id": "c",
+          "text": "1500 B"
+        },
+        {
+          "id": "d",
+          "text": "9000 B"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q30",
+      "type": "mcq",
+      "prompt": "BGP הוא?",
+      "options": [
+        {
+          "id": "a",
+          "text": "פרוטוקול ניתוב פנימי"
+        },
+        {
+          "id": "b",
+          "text": "פרוטוקול ניתוב בין מערכות אוטונומיות"
+        },
+        {
+          "id": "c",
+          "text": "פרוטוקול הצפנה"
+        },
+        {
+          "id": "d",
+          "text": "פרוטוקול ניהול רשת"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q31",
+      "type": "mcq",
+      "prompt": "פרגמנטציה שךובה?",
+      "options": [
+        {
+          "id": "a",
+          "text": "שכבת הקישור"
+        },
+        {
+          "id": "b",
+          "text": "שכבת הרשת"
+        },
+        {
+          "id": "c",
+          "text": "שכבת התחבורה"
+        },
+        {
+          "id": "d",
+          "text": "שכבת היישום"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q32",
+      "type": "mcq",
+      "prompt": "CRC ברשתות?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Cyclic Redundancy Check — גילוי שגיאות"
+        },
+        {
+          "id": "b",
+          "text": "Connection Reliability Code"
+        },
+        {
+          "id": "c",
+          "text": "Cryptographic Resource Certificate"
+        },
+        {
+          "id": "d",
+          "text": "Client Request Counter"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q33",
+      "type": "mcq",
+      "prompt": "Switch לעומת Router?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Switch בשכבת הרשת; Router בשכבת הקישור"
+        },
+        {
+          "id": "b",
+          "text": "Switch מחבר LAN לפי MAC; Router מחבר רשתות לפי IP"
+        },
+        {
+          "id": "c",
+          "text": "Router מהיר יותר"
+        },
+        {
+          "id": "d",
+          "text": "אין הבדל"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q34",
+      "type": "mcq",
+      "prompt": "SMTP?",
+      "options": [
+        {
+          "id": "a",
+          "text": "קבלת דואל"
+        },
+        {
+          "id": "b",
+          "text": "שליחת דואל"
+        },
+        {
+          "id": "c",
+          "text": "גלישה באינטרנט"
+        },
+        {
+          "id": "d",
+          "text": "העברת קבצים"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q35",
+      "type": "mcq",
+      "prompt": "POP3/IMAP?",
+      "options": [
+        {
+          "id": "a",
+          "text": "שליחת דואל"
+        },
+        {
+          "id": "b",
+          "text": "קבלת דואל"
+        },
+        {
+          "id": "c",
+          "text": "ניהול רשת"
+        },
+        {
+          "id": "d",
+          "text": "הצפנה"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q36",
+      "type": "mcq",
+      "prompt": "VLAN?",
+      "options": [
+        {
+          "id": "a",
+          "text": "רשת פיזית מכבלים אופטיים"
+        },
+        {
+          "id": "b",
+          "text": "פרוטוקול VPN"
+        },
+        {
+          "id": "c",
+          "text": "רשת לוגית מבודדת על תשתית פיזית משותפת"
+        },
+        {
+          "id": "d",
+          "text": "סוג נתב"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q37",
+      "type": "mcq",
+      "prompt": "STP?",
+      "options": [
+        {
+          "id": "a",
+          "text": "פרוטוקול ניתוב"
+        },
+        {
+          "id": "b",
+          "text": "פרוטוקול למניעת לולאות בשכבת הקישור"
+        },
+        {
+          "id": "c",
+          "text": "פרוטוקול VLAN"
+        },
+        {
+          "id": "d",
+          "text": "אבטחת Wi-Fi"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q38",
+      "type": "mcq",
+      "prompt": "פורט FTP נתונים?",
+      "options": [
+        {
+          "id": "a",
+          "text": "20"
+        },
+        {
+          "id": "b",
+          "text": "21"
+        },
+        {
+          "id": "c",
+          "text": "22"
+        },
+        {
+          "id": "d",
+          "text": "23"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q39",
+      "type": "mcq",
+      "prompt": "QoS?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Quality of Service — תעדוף תעבורה"
+        },
+        {
+          "id": "b",
+          "text": "Quantity of Segments"
+        },
+        {
+          "id": "c",
+          "text": "Queue of Servers"
+        },
+        {
+          "id": "d",
+          "text": "Query on Socket"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q40",
+      "type": "mcq",
+      "prompt": "פרוטוקול סנכרון שעון?",
+      "options": [
+        {
+          "id": "a",
+          "text": "SNMP"
+        },
+        {
+          "id": "b",
+          "text": "NTP"
+        },
+        {
+          "id": "c",
+          "text": "SMTP"
+        },
+        {
+          "id": "d",
+          "text": "TFTP"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q41",
+      "type": "mcq",
+      "prompt": "CDN?",
+      "options": [
+        {
+          "id": "a",
+          "text": "פרוטוקול העברה מוצפנת"
+        },
+        {
+          "id": "b",
+          "text": "רשת שרתים מפוזרת גיאוגרפית שמשרתת תוכן ממיקום קרוב"
+        },
+        {
+          "id": "c",
+          "text": "firewall מיוחד"
+        },
+        {
+          "id": "d",
+          "text": "פרוטוקול רוחב פס"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q42",
+      "type": "mcq",
+      "prompt": "MAC Address?",
+      "options": [
+        {
+          "id": "a",
+          "text": "כתובת לוגית 32 סיביתות"
+        },
+        {
+          "id": "b",
+          "text": "כתובת פיזית ייחודית 48 סיביתות"
+        },
+        {
+          "id": "c",
+          "text": "כתובת ניתוב אינטרנט"
+        },
+        {
+          "id": "d",
+          "text": "זיהוי יצרן"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q43",
+      "type": "mcq",
+      "prompt": "SNMP?",
+      "options": [
+        {
+          "id": "a",
+          "text": "שליחת דואל"
+        },
+        {
+          "id": "b",
+          "text": "ניהול ומעקב אחר מכשירי רשת"
+        },
+        {
+          "id": "c",
+          "text": "העברת קבצים"
+        },
+        {
+          "id": "d",
+          "text": "אימות משתמשים"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q44",
+      "type": "mcq",
+      "prompt": "Half-Duplex לעומת Full-Duplex?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Half: שליחה וקבלה בו-זמנית"
+        },
+        {
+          "id": "b",
+          "text": "Half: שליחה או קבלה; Full: שניהם בו-זמנית"
+        },
+        {
+          "id": "c",
+          "text": "Full: חצי רוחב פס"
+        },
+        {
+          "id": "d",
+          "text": "אין הבדל"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q45",
+      "type": "mcq",
+      "prompt": "UDP בלבד?",
+      "options": [
+        {
+          "id": "a",
+          "text": "HTTP"
+        },
+        {
+          "id": "b",
+          "text": "FTP"
+        },
+        {
+          "id": "c",
+          "text": "TFTP"
+        },
+        {
+          "id": "d",
+          "text": "SMTP"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q46",
+      "type": "mcq",
+      "prompt": "HTTP/2?",
+      "options": [
+        {
+          "id": "a",
+          "text": "HTTP/2 משתמש UDP"
+        },
+        {
+          "id": "b",
+          "text": "HTTP/2 תומך multiplexing על חיבור אחד"
+        },
+        {
+          "id": "c",
+          "text": "HTTP/2 מוצפן תמיד"
+        },
+        {
+          "id": "d",
+          "text": "HTTP/2 רק GET"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q47",
+      "type": "mcq",
+      "prompt": "HTTP/3?",
+      "options": [
+        {
+          "id": "a",
+          "text": "HTTP על QUIC/UDP עם multiplexing"
+        },
+        {
+          "id": "b",
+          "text": "HTTP על TCP עם דחיסה"
+        },
+        {
+          "id": "c",
+          "text": "HTTP עם TLS 1.4"
+        },
+        {
+          "id": "d",
+          "text": "HTTP עם IPv6 בלבד"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q48",
+      "type": "mcq",
+      "prompt": "QUIC?",
+      "options": [
+        {
+          "id": "a",
+          "text": "גרסה מהירה של TCP"
+        },
+        {
+          "id": "b",
+          "text": "Google מבוסס UDP עם הצפנה מובנית, בסיס HTTP/3"
+        },
+        {
+          "id": "c",
+          "text": "הצפנת DNS"
+        },
+        {
+          "id": "d",
+          "text": "דחיסת נתונים"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q49",
+      "type": "mcq",
+      "prompt": "TCP Sequence Number?",
+      "options": [
+        {
+          "id": "a",
+          "text": "מספר סידורי של הפקטה"
+        },
+        {
+          "id": "b",
+          "text": "מספר הבית הראשון ביחס לכלל הנתונים"
+        },
+        {
+          "id": "c",
+          "text": "מספר החיבור"
+        },
+        {
+          "id": "d",
+          "text": "מספר הפורט"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q50",
+      "type": "mcq",
+      "prompt": "MSS ב-TCP?",
+      "options": [
+        {
+          "id": "a",
+          "text": "גודל מרבי של חלון"
+        },
+        {
+          "id": "b",
+          "text": "גודל מרבי של נתונים ללא header בפקטה"
+        },
+        {
+          "id": "c",
+          "text": "מספר מרבי של segments"
+        },
+        {
+          "id": "d",
+          "text": "גודל מרבי של חיבור"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q51",
+      "type": "mcq",
+      "prompt": "Well-Known Ports?",
+      "options": [
+        {
+          "id": "a",
+          "text": "0-255"
+        },
+        {
+          "id": "b",
+          "text": "0-1023"
+        },
+        {
+          "id": "c",
+          "text": "1024-49151"
+        },
+        {
+          "id": "d",
+          "text": "49152-65535"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q52",
+      "type": "mcq",
+      "prompt": "CSMA/CD?",
+      "options": [
+        {
+          "id": "a",
+          "text": "פרוטוקול VLAN"
+        },
+        {
+          "id": "b",
+          "text": "מנגנון Ethernet: האזנה לפני שליחה וגילוי התנגשויות"
+        },
+        {
+          "id": "c",
+          "text": "הצפנת שכבת קישור"
+        },
+        {
+          "id": "d",
+          "text": "המרת MAC ל-IP"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q53",
+      "type": "mcq",
+      "prompt": "TIME_WAIT?",
+      "options": [
+        {
+          "id": "a",
+          "text": "שני הצדדים ממתינים לנתונים"
+        },
+        {
+          "id": "b",
+          "text": "הצד שסיים ממתין שה-FIN הגיע ולא יחזרו פקטות ישנות"
+        },
+        {
+          "id": "c",
+          "text": "ממתין לאתחול"
+        },
+        {
+          "id": "d",
+          "text": "ממתין ל-DNS"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q54",
+      "type": "mcq",
+      "prompt": "TTL ב-IP פקטות?",
+      "options": [
+        {
+          "id": "a",
+          "text": "זמן שמירה במטמון"
+        },
+        {
+          "id": "b",
+          "text": "מספר הקפות שפקטה יכולה לעבור לפני מחיקה"
+        },
+        {
+          "id": "c",
+          "text": "גודל מרבי של פקטה"
+        },
+        {
+          "id": "d",
+          "text": "זמן המתנה לאישור"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q55",
+      "type": "mcq",
+      "prompt": "ISN ב-TCP?",
+      "options": [
+        {
+          "id": "a",
+          "text": "המספר הסידורי הראשוני הנבחר אקראית"
+        },
+        {
+          "id": "b",
+          "text": "כתובת IP ראשונה"
+        },
+        {
+          "id": "c",
+          "text": "מספר חיבורים מרבי"
+        },
+        {
+          "id": "d",
+          "text": "מספר סידורי נתב"
+        }
+      ],
+      "points": 4
+    },
+    {
+      "id": "q56",
+      "type": "text",
+      "prompt": "הסבירו את ההבדל בין ניתוב סטטי לניתוב דינמי. יתרון וחסרון לכל אחד.",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 6
+    },
+    {
+      "id": "q57",
+      "type": "text",
+      "prompt": "תארו את תהליך DNS Resolution המלא ל-www.example.com. כל השלבים בסדר.",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 6
+    },
+    {
+      "id": "q58",
+      "type": "text",
+      "prompt": "מהו Sliding Window? איך משפר יעילות לעומת Stop-and-Wait?",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 6
+    },
+    {
+      "id": "q59",
+      "type": "text",
+      "prompt": "הסבירו מהו CIDR ומדוע הכרחי. דוגמא לכתובת CIDR ופרשו אותה.",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 6
+    },
+    {
+      "id": "q60",
+      "type": "text",
+      "prompt": "מהו 3-way handshake של TCP ומדוע נדרש? מה קורה אם אחד לא מגיב?",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 6
+    },
+    {
+      "id": "q61",
+      "type": "text",
+      "prompt": "הבדל Congestion Control ל-Flow Control. אילו אלגוריתמים ידועים?",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 6
+    },
+    {
+      "id": "q62",
+      "type": "text",
+      "prompt": "מהו VPN ואיך עובד? שתי טכנולוגיות נפוצות.",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 6
+    },
+    {
+      "id": "q63",
+      "type": "text",
+      "prompt": "הסבירו ARP. מה קורה כשכתובת IP לא ב-cache?",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 6
+    },
+    {
+      "id": "q64",
+      "type": "text",
+      "prompt": "3 יתרונות של IPv6 על IPv4.",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 6
+    },
+    {
+      "id": "q65",
+      "type": "text",
+      "prompt": "מהו firewall? הבדל Stateless ל-Stateful.",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 6
+    },
+    {
+      "id": "q66",
+      "type": "text",
+      "prompt": "מהו NTP ולמה סנכרון שעון חשוב? אלגוריתם Cristian.",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 6
+    },
+    {
+      "id": "q67",
+      "type": "text",
+      "prompt": "הבדל TCP Slow Start ל-Congestion Avoidance.",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 6
+    },
+    {
+      "id": "q68",
+      "type": "text",
+      "prompt": "מהו RUDP? יתרונות על TCP ומתי פשר להשתמש?",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 6
+    },
+    {
+      "id": "q69",
+      "type": "text",
+      "prompt": "מהו Jitter? מדוע בעייתי עבור VoIP?",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 6
+    },
+    {
+      "id": "q70",
+      "type": "text",
+      "prompt": "יררכיית DNS: Root, TLD, Authoritative. תפקיד כל שרת ברזולוציה איטרטיבית.",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 6
+    },
+    {
+      "id": "q71",
+      "type": "text",
+      "prompt": "מהו WebSocket? איך שונה מ-HTTP? מתי כדאי להשתמש?",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 6
+    },
+    {
+      "id": "q72",
+      "type": "text",
+      "prompt": "הבדל header בין UDP ל-TCP. מה כל שדה?",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 6
+    },
+    {
+      "id": "q73",
+      "type": "text",
+      "prompt": "מהו HTTPS ו-TLS? תארו TLS Handshake.",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 6
+    },
+    {
+      "id": "q74",
+      "type": "text",
+      "prompt": "מהו load balancing? שתי שיטות וסיטואציות.",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 6
+    },
+    {
+      "id": "q75",
+      "type": "text",
+      "prompt": "מהו ICMP? כיצד פועלים ping ו-traceroute?",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 6
+    },
+    {
+      "id": "q76",
+      "type": "text",
+      "prompt": "שאלת עומק: TCP Tahoe: Slow Start, Congestion Avoidance, Fast Retransmit. מה שונה TCP Reno?",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 10
+    },
+    {
+      "id": "q77",
+      "type": "text",
+      "prompt": "שאלת עומק: ארכיטקטורת DNS מלאה. Zone Delegation, Glue Records, SOA, Negative Caching. מתי עובר TCP?",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 10
+    },
+    {
+      "id": "q78",
+      "type": "text",
+      "prompt": "שאלת עומק: בעיית סנכרון זמן. Clock Skew, Drift. כיצד NTP מתמודד? חישוב offset ו-RTT.",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 10
+    },
+    {
+      "id": "q79",
+      "type": "text",
+      "prompt": "שאלת עומק: TCP Congestion Control מלא. Bandwidth-Delay Product. throughput: RTT=100ms, window=65KB, loss=0.01%.",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 10
+    },
+    {
+      "id": "q80",
+      "type": "text",
+      "prompt": "שאלת עומק: NAT עם PAT. טבלת Translation Table. חסרונות NAT.",
+      "placeholder": "הקלידו את תשובתכם כאן...",
+      "points": 10
+    }
+  ]
+}

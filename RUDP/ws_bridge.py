@@ -30,6 +30,9 @@ import os
 import pathlib
 import random
 import socket
+import struct
+import time
+import zlib
 
 import websockets
 
@@ -51,7 +54,7 @@ DNS_RESOLVER     = os.environ.get('DNS_RESOLVER', '10.99.0.2')
 # time_resp is intentionally excluded — it is timing-sensitive for NTP
 # and must be forwarded immediately to keep offset measurements accurate.
 SYNC_PACKET_TYPES = {'exam_resp', 'schedule_resp'}
-JITTER_BUFFER_MS  = 30
+JITTER_BUFFER_MS  = 5
 
 # ── Software netem (professor dashboard writes /tmp/netem_delay.json) ─────────
 _NETEM_FILE  = pathlib.Path('/tmp/netem_delay.json')
@@ -100,16 +103,28 @@ async def _netem_delay() -> bool:
     return False
 
 
+_cached_resolve: tuple[str, list[str]] | None = None
+
+
 def _resolve_server() -> tuple[str, list[str]]:
     """
     Resolve RUDP_SERVER_HOST via the container's configured DNS (10.99.0.2).
     Returns (chosen_ip, all_ips).  getaddrinfo may return multiple A records
-    (DNS round-robin load balancing); the OS picks one.
+    (DNS round-robin load balancing); the result is cached so all WebSocket
+    sessions through this bridge hit the same backend — critical for the
+    ExamSendCoordinator which must see every client on the same server.
     """
+    global _cached_resolve
+    if _cached_resolve is not None:
+        log.info("Using cached DNS: %s → %s  (all: %s)",
+                 RUDP_SERVER_HOST, _cached_resolve[0], _cached_resolve[1])
+        return _cached_resolve
+
     results = socket.getaddrinfo(RUDP_SERVER_HOST, RUDP_SERVER_PORT,
                                   socket.AF_INET, socket.SOCK_DGRAM)
     all_ips = list(dict.fromkeys(r[4][0] for r in results))   # unique, ordered
     ip = results[0][4][0]
+    _cached_resolve = (ip, all_ips)
     log.info("Resolved %s → %s  (all: %s)", RUDP_SERVER_HOST, ip, all_ips)
     return ip, all_ips
 
@@ -164,7 +179,19 @@ async def _rudp_to_ws(ws, rudp, state: dict):
             data = await rudp.recv()
             if not data:
                 break
-            text = data.decode('utf-8')
+            # Decode server frame format:
+            #  b'ZS' — split format: uint16-BE(meta_len) | meta_json | exam_zl
+            #  b'ZL' — legacy full-frame compress (fallback)
+            #  else  — plain UTF-8 JSON
+            if data[:2] == b'ZS':
+                meta_len = struct.unpack('>H', data[2:4])[0]
+                meta     = json.loads(data[4:4 + meta_len])
+                meta['exam'] = json.loads(zlib.decompress(data[4 + meta_len:]))
+                text = json.dumps(meta)
+            elif data[:2] == b'ZL':
+                text = zlib.decompress(data[2:]).decode('utf-8')
+            else:
+                text = data.decode('utf-8')
             try:
                 obj = json.loads(text)
                 pkt_type = obj.get('type', '?')
@@ -179,18 +206,31 @@ async def _rudp_to_ws(ws, rudp, state: dict):
                 if (pkt_type in SYNC_PACKET_TYPES
                         and 'server_sent_at_ms' in obj
                         and state['max_rtt_ms'] > 0):
-                    # Update per-connection sync state from schedule_resp
+                    # Always pick up the latest max_rtt/my_rtt from the
+                    # server — exam_resp carries fresh values computed after
+                    # all clients registered their Phase-3 RTT samples.
+                    if 'max_rtt_ms' in obj:
+                        state['max_rtt_ms'] = float(obj['max_rtt_ms'])
+                    if 'my_rtt_ms' in obj:
+                        state['my_rtt_ms']  = float(obj['my_rtt_ms'])
                     if pkt_type == 'schedule_resp':
-                        state['max_rtt_ms'] = float(obj.get('max_rtt_ms', state['max_rtt_ms']))
-                        state['my_rtt_ms']  = float(obj.get('my_rtt_ms',  rudp.rtt_ms))
                         log.info("Sync state updated: max_rtt=%.1f my_rtt=%.1f",
                                  state['max_rtt_ms'], state['my_rtt_ms'])
 
                     target_ms  = (obj['server_sent_at_ms']
                                   + state['max_rtt_ms'] / 2
                                   + JITTER_BUFFER_MS)
-                    hold_ms    = target_ms - time.time() * 1000
+                    now_ms     = time.time() * 1000
+                    hold_ms    = target_ms - now_ms
                     actual_hold = max(0.0, hold_ms)
+                    transit_ms = now_ms - obj['server_sent_at_ms']
+
+                    if pkt_type == 'exam_resp':
+                        log.info("exam_resp transit=%.1fms hold=%.1fms "
+                                 "max_rtt=%.1f server_sent=%d",
+                                 transit_ms, actual_hold,
+                                 state['max_rtt_ms'],
+                                 obj['server_sent_at_ms'])
 
                     if actual_hold > 0:
                         log.info("Sync hold %.1f ms for %s  "
@@ -223,6 +263,8 @@ async def _rudp_to_ws(ws, rudp, state: dict):
         except (RudpTimeout, RudpReset) as e:
             log.warning("RUDP recv error: %s", e)
             break
+        except websockets.exceptions.ConnectionClosed:
+            break   # browser closed tab / navigated away — not an error
         except Exception as e:
             log.warning("WS send error: %s", e)
             break

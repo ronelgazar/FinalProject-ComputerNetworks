@@ -1,0 +1,143 @@
+@startuml 10_client_lifecycle
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundcorner 14
+skinparam ArrowThickness 1.8
+
+skinparam state {
+  BackgroundColor #f0f4ff
+  BorderColor #93c5fd
+  BorderThickness 2
+  FontColor #1e3a5f
+  FontSize 12
+  ArrowColor #2563eb
+  ArrowThickness 1.8
+  StartColor #1e40af
+  EndColor #dc2626
+}
+skinparam state<<dhcp>> {
+  BackgroundColor #f0fdf4
+  BorderColor #4ade80
+  FontColor #14532d
+}
+skinparam state<<dns>> {
+  BackgroundColor #eff6ff
+  BorderColor #60a5fa
+  FontColor #1e3a8a
+}
+skinparam state<<rudp>> {
+  BackgroundColor #faf5ff
+  BorderColor #c084fc
+  FontColor #581c87
+}
+skinparam state<<exam>> {
+  BackgroundColor #fefce8
+  BorderColor #fbbf24
+  FontColor #78350f
+}
+skinparam state<<done>> {
+  BackgroundColor #f0fdf4
+  BorderColor #34d399
+  FontColor #065f46
+}
+skinparam state<<error>> {
+  BackgroundColor #fff1f2
+  BorderColor #fb7185
+  FontColor #9f1239
+}
+
+title <size:18><color:#1d4ed8>**מחזור חיי לקוח — Client Lifecycle**</color></size>\n<size:11><color:#64748b>DHCP → DNS → RUDP → WebSocket → RTT Sync → Exam → Submit</color></size>
+
+[*] --> BOOT
+
+state BOOT <<dhcp>>
+BOOT : entrypoint.sh מופעל
+BOOT : supervisord מאתחל
+
+state DHCP_DISCOVER <<dhcp>>
+DHCP_DISCOVER : DHCPDISCOVER broadcast UDP:67
+DHCP_DISCOVER : src=0.0.0.0 dst=255.255.255.255
+
+state IP_CONFIGURED <<dhcp>>
+IP_CONFIGURED : DHCPOFFER → DHCPREQUEST → DHCPACK
+IP_CONFIGURED : ip addr add 10.99.0.1xx/24 dev eth0
+IP_CONFIGURED : ip route add default via 10.99.0.1
+IP_CONFIGURED : nameserver 10.99.0.2 → /etc/resolv.conf
+
+state DNS_RESOLVING <<dns>>
+DNS_RESOLVING : getaddrinfo("server.exam.lan")
+DNS_RESOLVING : resolver → root → tld → auth
+DNS_RESOLVING : מקבל 3 רשומות A: [.20, .21, .22]
+
+state RUDP_HANDSHAKE <<rudp>>
+RUDP_HANDSHAKE : SYN(mss=1200) → SYN+ACK(mss=1200) → ACK
+RUDP_HANDSHAKE : _mss = min(local, remote) = 1200
+RUDP_HANDSHAKE : handshake_rtt_ms נמדד
+RUDP_HANDSHAKE : cwnd=1, ssthresh=32
+
+state WS_READY <<rudp>>
+WS_READY : nginx proxy /ws → :8081
+WS_READY : WebSocket Upgrade
+WS_READY : connection_info נשלח לדפדפן
+WS_READY : hello נשלח לשרת
+
+state RTT_SYNC <<exam>>
+RTT_SYNC : 12 × time_req/time_resp
+RTT_SYNC : סבבים 1–4: Cristian offset
+RTT_SYNC : סבבים 5–12: adaptive EWMA
+RTT_SYNC : תוצאה: offset_ms, rtt_samples
+
+state SCHEDULE_PENDING <<exam>>
+SCHEDULE_PENDING : schedule_req נשלח (rtt_ms, rtt_samples)
+SCHEDULE_PENDING : מקבל: start_at_ms, duration_sec
+SCHEDULE_PENDING : startAt = start_at_ms − offset_ms
+
+state EXAM_COUNTDOWN <<exam>>
+EXAM_COUNTDOWN : טיימר מקומי עד startAt
+EXAM_COUNTDOWN : exam_req נשלח לשרת (rtt_samples)
+EXAM_COUNTDOWN : ממתין ל-ExamSendCoordinator
+
+state EXAM_ACTIVE <<exam>>
+EXAM_ACTIVE : exam_resp התקבל ב-target_ms ± 5ms
+EXAM_ACTIVE : SyncProofCard מוצג
+EXAM_ACTIVE : סטודנט ממלא תשובות
+
+state SUBMITTED <<done>>
+SUBMITTED : answers_save → תשובות נשמרות
+SUBMITTED : submit_req → submit_resp {ok: true}
+SUBMITTED : בחינה הוגשה בהצלחה
+
+state DISCONNECTED <<error>>
+DISCONNECTED : חיבור אבד (RST / FIN / timeout)
+DISCONNECTED : 5 × 500ms retries ← RudpTimeout
+
+BOOT              --> DHCP_DISCOVER
+DHCP_DISCOVER     --> IP_CONFIGURED      : DHCPACK
+IP_CONFIGURED     --> DNS_RESOLVING      : supervisord הפעיל nginx + ws_bridge
+DNS_RESOLVING     --> RUDP_HANDSHAKE     : A records התקבלו
+RUDP_HANDSHAKE    --> WS_READY           : ACK ← חיבור נוצר ✓
+WS_READY          --> RTT_SYNC           : דפדפן פתח /ws
+RTT_SYNC          --> SCHEDULE_PENDING   : 12 סבבים הושלמו
+SCHEDULE_PENDING  --> EXAM_COUNTDOWN     : start_at_ms התקבל
+EXAM_COUNTDOWN    --> EXAM_ACTIVE        : exam_resp הגיע ב-target_ms
+EXAM_ACTIVE       --> SUBMITTED          : submit_req ✓
+SUBMITTED         --> [*]
+
+RUDP_HANDSHAKE    --> DISCONNECTED       : 5 retries timeout
+WS_READY          --> DISCONNECTED       : RST / FIN
+DISCONNECTED      --> [*]
+
+legend bottom
+  |= צבע |= שלב |
+  |<back:#f0fdf4> &nbsp; </back>| DHCP — רכישת כתובת IP |
+  |<back:#eff6ff> &nbsp; </back>| DNS — רזולוציית שמות |
+  |<back:#faf5ff> &nbsp; </back>| RUDP — חיבור ו-WebSocket |
+  |<back:#fefce8> &nbsp; </back>| Exam — שלבי הבחינה |
+  |<back:#f0fdf4> &nbsp; </back>| Done — סיום תקין |
+  |<back:#fff1f2> &nbsp; </back>| Error — ניתוק |
+endlegend
+
+@enduml

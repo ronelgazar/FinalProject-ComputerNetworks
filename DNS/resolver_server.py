@@ -1,11 +1,21 @@
 """
 Recursive DNS resolver at 10.99.0.2.
-Implements iterative resolution: root → TLD → auth.
+
+Resolution mode (switchable at runtime):
+  iterative  (default) — resolver walks root → TLD → auth itself
+  recursive             — resolver sends RD=1 to root; root resolves the full
+                          query (requires dns-root RECURSIVE_CAPABLE=1)
+
+Set via RESOLUTION_MODE env var or /tmp/dns_mode.json {"mode": "recursive"}.
+The prof dashboard writes that file to toggle without a container restart.
+
 TTL-aware cache. Handles CNAME chains up to depth 8.
 """
 from __future__ import annotations
+import json
 import logging
 import os
+import pathlib
 import socket
 import struct
 import time
@@ -30,6 +40,60 @@ ROOT_SERVER = os.environ.get('ROOT_SERVER', '10.99.0.10')
 ROOT_PORT   = int(os.environ.get('ROOT_PORT', '53'))
 QUERY_TIMEOUT = 3.0
 MAX_CNAME_DEPTH = 8
+
+# ── Resolution mode (iterative | recursive) ───────────────────────────────────
+# Toggle at runtime by writing {"mode": "recursive"} to _DNS_MODE_FILE.
+# The prof dashboard does this via /api/dns/mode (no container restart needed).
+RESOLUTION_MODE  = os.environ.get('RESOLUTION_MODE', 'iterative')
+_DNS_MODE_FILE   = pathlib.Path('/tmp/dns_mode.json')
+_dns_mode        = {'mode': RESOLUTION_MODE, '_mtime': 0.0}
+
+
+def _reload_dns_mode() -> str:
+    try:
+        mt = _DNS_MODE_FILE.stat().st_mtime
+        if mt != _dns_mode['_mtime']:
+            data = json.loads(_DNS_MODE_FILE.read_text())
+            _dns_mode['mode']   = data.get('mode', RESOLUTION_MODE)
+            _dns_mode['_mtime'] = mt
+            log.info("DNS resolution mode → %s", _dns_mode['mode'])
+    except FileNotFoundError:
+        _dns_mode['mode'] = RESOLUTION_MODE
+    except Exception as exc:
+        log.warning("Could not read dns_mode file: %s", exc)
+    return _dns_mode['mode']
+
+
+def _resolve_recursive_delegate(name: str, qtype: int) -> Tuple[List[DnsRR], int]:
+    """
+    Delegate resolution to root with RD=1.
+    Root must have RECURSIVE_CAPABLE=1; it walks TLD→auth and returns the answer.
+    Falls back to iterative if root returns no answer.
+    """
+    cached = _cache_get(name, qtype)
+    if cached is not None:
+        return cached, RCODE_NOERROR
+
+    q = DnsQuestion(qname=name, qtype=qtype, qclass=CLASS_IN)
+    raw = _send_query(ROOT_SERVER, ROOT_PORT, q, want_recursion=True)
+    if raw is None:
+        log.warning("Recursive delegate: no response from root, falling back")
+        return _resolve_iterative(name, qtype)
+    try:
+        hdr, _, answers, _, _ = parse_response(raw)
+    except Exception as exc:
+        log.warning("Recursive delegate parse error: %s — falling back", exc)
+        return _resolve_iterative(name, qtype)
+
+    if hdr.rcode == RCODE_NXDOMAIN:
+        return [], RCODE_NXDOMAIN
+    rrs = [r for r in answers if r.rtype == qtype]
+    if not rrs and hdr.rcode == RCODE_NOERROR:
+        log.warning("Recursive delegate: root returned no answer, falling back")
+        return _resolve_iterative(name, qtype)
+    _cache_put(name, qtype, rrs)
+    return rrs, hdr.rcode
+
 
 # ── Cache ─────────────────────────────────────────────────────────────────────
 # key: (name_lower, qtype) → (list[DnsRR], expires_at)
@@ -214,12 +278,17 @@ def _resolve_iterative(name: str, qtype: int) -> Tuple[List[DnsRR], int]:
 def _resolve_with_cname(name: str, qtype: int, depth: int = 0) -> Tuple[List[DnsRR], int]:
     if depth > MAX_CNAME_DEPTH:
         return [], RCODE_SERVFAIL
-    rrs, rcode = _resolve_iterative(name, qtype)
+    resolve_fn = (
+        _resolve_recursive_delegate
+        if _reload_dns_mode() == 'recursive'
+        else _resolve_iterative
+    )
+    rrs, rcode = resolve_fn(name, qtype)
     if rcode != RCODE_NOERROR:
         return rrs, rcode
     if not rrs:
         # Check for CNAME
-        cname_rrs, crc = _resolve_iterative(name, TYPE_CNAME)
+        cname_rrs, crc = resolve_fn(name, TYPE_CNAME)
         if crc == RCODE_NOERROR and cname_rrs:
             try:
                 target, _ = decode_name(cname_rrs[0].rdata, 0)

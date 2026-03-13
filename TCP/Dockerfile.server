@@ -1,0 +1,4 @@
+FROM python:3.11-slim
+WORKDIR /app
+COPY TCP/ .
+CMD ["python3", "exam_server_tcp.py"]

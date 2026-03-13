@@ -1,0 +1,203 @@
+@startuml diagram_states
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam defaultFontColor #1a1a2e
+skinparam shadowing false
+skinparam roundcorner 14
+skinparam ArrowThickness 1.8
+
+skinparam state {
+  BackgroundColor #f0f4ff
+  BorderColor #93c5fd
+  BorderThickness 2
+  FontColor #1e3a5f
+  FontSize 12
+  ArrowColor #2563eb
+  ArrowThickness 1.8
+  StartColor #1e40af
+  EndColor #dc2626
+  AttributeFontColor #475569
+  AttributeFontSize 10
+}
+
+skinparam state<<dhcp>> {
+  BackgroundColor #f0fdf4
+  BorderColor #4ade80
+  FontColor #14532d
+}
+skinparam state<<dns>> {
+  BackgroundColor #eff6ff
+  BorderColor #60a5fa
+  FontColor #1e3a8a
+}
+skinparam state<<rudp>> {
+  BackgroundColor #faf5ff
+  BorderColor #c084fc
+  FontColor #581c87
+}
+skinparam state<<exam>> {
+  BackgroundColor #fefce8
+  BorderColor #fbbf24
+  FontColor #78350f
+}
+skinparam state<<done>> {
+  BackgroundColor #f0fdf4
+  BorderColor #34d399
+  FontColor #065f46
+}
+skinparam state<<error>> {
+  BackgroundColor #fff1f2
+  BorderColor #fb7185
+  FontColor #9f1239
+}
+skinparam state<<coordinator>> {
+  BackgroundColor #f0f9ff
+  BorderColor #38bdf8
+  FontColor #0c4a6e
+}
+
+title <size:20><color:#1d4ed8>**מחזור חיי לקוח & ExamSendCoordinator**</color></size>\n<size:12><color:#64748b>מצבי המערכת — Client Lifecycle & Server Coordinator</color></size>
+
+' ══════════════════════════════════════════════════════════
+' LEFT: CLIENT LIFECYCLE
+' ══════════════════════════════════════════════════════════
+state "🖥  לקוח — client-N" as CLIENT {
+
+  [*] --> BOOT
+
+  state BOOT <<dhcp>>
+  BOOT : **אתחול**
+  BOOT : entrypoint.sh מופעל
+  BOOT : supervisord מתחיל
+
+  state DHCP_DISCOVER <<dhcp>>
+  DHCP_DISCOVER : **DHCP DISCOVER**
+  DHCP_DISCOVER : broadcast UDP:67
+  DHCP_DISCOVER : → 255.255.255.255
+
+  state IP_CONFIGURED <<dhcp>>
+  IP_CONFIGURED : **IP CONFIGURED**
+  IP_CONFIGURED : ip addr add 10.99.0.1xx/24
+  IP_CONFIGURED : DNS = 10.99.0.2
+
+  state DNS_RESOLVING <<dns>>
+  DNS_RESOLVING : **DNS RESOLVING**
+  DNS_RESOLVING : getaddrinfo("server.exam.lan")
+  DNS_RESOLVING : root → TLD → auth
+
+  state RUDP_HANDSHAKE <<rudp>>
+  RUDP_HANDSHAKE : **RUDP HANDSHAKE**
+  RUDP_HANDSHAKE : SYN → SYN+ACK → ACK
+  RUDP_HANDSHAKE : handshake_rtt_ms נמדד
+
+  state WS_READY <<rudp>>
+  WS_READY : **WS BRIDGE READY**
+  WS_READY : RudpSocket מוכן
+  WS_READY : connection_info נשלח לדפדפן
+
+  state RTT_SYNC <<exam>>
+  RTT_SYNC : **RTT SYNC**
+  RTT_SYNC : 12 × time_req/time_resp
+  RTT_SYNC : Cristian → adaptive offset
+
+  state SCHEDULE_PENDING <<exam>>
+  SCHEDULE_PENDING : **SCHEDULE PENDING**
+  SCHEDULE_PENDING : schedule_req נשלח
+  SCHEDULE_PENDING : ממתין ל-start_at_ms
+
+  state EXAM_COUNTDOWN <<exam>>
+  EXAM_COUNTDOWN : **EXAM COUNTDOWN**
+  EXAM_COUNTDOWN : startAt = start_at_ms − offset_ms
+  EXAM_COUNTDOWN : טיימר מקומי פועל
+
+  state EXAM_ACTIVE <<exam>>
+  EXAM_ACTIVE : **EXAM ACTIVE**
+  EXAM_ACTIVE : exam_resp התקבל מהגשר
+  EXAM_ACTIVE : סטודנט ממלא שאלות
+
+  state SUBMITTED <<done>>
+  SUBMITTED : **SUBMITTED**
+  SUBMITTED : answers_save + submit_req
+  SUBMITTED : תשובות נשמרו בשרת
+
+  state DISCONNECTED <<error>>
+  DISCONNECTED : **DISCONNECTED**
+  DISCONNECTED : חיבור אבד
+
+  BOOT              --> DHCP_DISCOVER      : supervisord הופעל
+  DHCP_DISCOVER     --> IP_CONFIGURED      : DHCPACK\n(IP + gw + DNS)
+  IP_CONFIGURED     --> DNS_RESOLVING      : nginx + ws_bridge הופעלו
+  DNS_RESOLVING     --> RUDP_HANDSHAKE     : A record התקבל
+  RUDP_HANDSHAKE    --> WS_READY           : הצלחה ✓
+  WS_READY          --> RTT_SYNC           : דפדפן פתח /ws
+  RTT_SYNC          --> SCHEDULE_PENDING   : offset מחושב
+  SCHEDULE_PENDING  --> EXAM_COUNTDOWN     : start_at_ms התקבל
+  EXAM_COUNTDOWN    --> EXAM_ACTIVE        : הטיימר הגיע ל-0 ⏱
+  EXAM_ACTIVE       --> SUBMITTED          : submit_req ✓
+  SUBMITTED         --> [*]
+
+  RUDP_HANDSHAKE    --> DISCONNECTED       : TIMEOUT\n5 × 500ms
+  WS_READY          --> DISCONNECTED       : RST / FIN\nסגירת דפדפן
+  DISCONNECTED      --> [*]
+}
+
+' ══════════════════════════════════════════════════════════
+' RIGHT: EXAM SEND COORDINATOR
+' ══════════════════════════════════════════════════════════
+state "⚙  ExamSendCoordinator — שרת" as ESC {
+
+  [*] --> IDLE
+
+  state IDLE <<coordinator>>
+  IDLE : **IDLE**
+  IDLE : ממתין ל-exam_req ראשון
+  IDLE : exam_zl מוכן (pre-compressed)
+
+  state COLLECTING <<coordinator>>
+  COLLECTING : **COLLECTING**
+  COLLECTING : חלון 1.5 שניות פתוח
+  COLLECTING : מקבל rtt_ms + handshake_rtt_ms
+  COLLECTING : מכל לקוח שמחוברים
+
+  state COMPUTING <<coordinator>>
+  COMPUTING : **COMPUTING**
+  COMPUTING : RTT_med = median(all RTTs)
+  COMPUTING : J_RTT = RTT_max − RTT_min
+  COMPUTING : D_i = (RTT_med + J_RTT) / 2
+  COMPUTING : T_send,i = T_arr − D_i
+
+  state STAGGERING <<rudp>>
+  STAGGERING : **STAGGERING**
+  STAGGERING : asyncio.sleep(T_send,i − now)
+  STAGGERING : שולח ZS-format לכל לקוח
+  STAGGERING : server_sent_at_ms מוחתם
+
+  state ALL_SENT <<done>>
+  ALL_SENT : **ALL SENT**
+  ALL_SENT : כל הלקוחות קיבלו
+  ALL_SENT : round הסתיים ✓
+
+  IDLE        --> COLLECTING  : exam_req ראשון
+  COLLECTING  --> COLLECTING  : exam_req נוסף\n(תוך 1.5s)
+  COLLECTING  --> COMPUTING   : חלון נסגר
+  COMPUTING   --> STAGGERING  : D_i חושב לכולם
+  STAGGERING  --> ALL_SENT    : כל החבילות נשלחו
+  ALL_SENT    --> IDLE        : מוכן ל-round הבא
+}
+
+left to right direction
+
+legend bottom
+  |= צבע |= שלב |
+  |<back:#f0fdf4> &nbsp; </back>| DHCP — רכישת כתובת IP |
+  |<back:#eff6ff> &nbsp; </back>| DNS — רזולוציית שמות |
+  |<back:#faf5ff> &nbsp; </back>| RUDP — פרוטוקול תחבורה / שרת |
+  |<back:#fefce8> &nbsp; </back>| Exam — שלבי הבחינה בלקוח |
+  |<back:#f0f9ff> &nbsp; </back>| Coordinator — לוגיקת שרת |
+  |<back:#f0fdf4> &nbsp; </back>| Done — מצב סיום תקין |
+  |<back:#fff1f2> &nbsp; </back>| Error — שגיאה / ניתוק |
+endlegend
+
+@enduml

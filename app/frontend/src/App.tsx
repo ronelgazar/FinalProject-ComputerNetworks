@@ -85,6 +85,21 @@ function rid() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+// ── Adaptive clock-sync helpers ──────────────────────────────────────────────
+function syncStdev(samples: SyncSample[], w = 5): number {
+  if (samples.length < 2) return Infinity;
+  const vals = samples.slice(-w).map(s => s.offset);
+  const m = vals.reduce((a, b) => a + b, 0) / vals.length;
+  return Math.sqrt(vals.reduce((s, x) => s + (x - m) ** 2, 0) / vals.length);
+}
+function syncHasConverged(samples: SyncSample[], w = 5, thresh = 1.5): boolean {
+  return samples.length >= w && syncStdev(samples, w) < thresh;
+}
+function buildRttSamples(samples: SyncSample[]): number[] {
+  const s = [...samples].sort((a, b) => a.rtt - b.rtt).map(x => x.rtt);
+  return [s[0], s[Math.floor(s.length / 2)], s[s.length - 1]];
+}
+
 class WSClient {
   private ws: WebSocket | null = null;
   private pending = new Map<string, { resolve: (v: any) => void; reject: (e: any) => void; t: number }>();
@@ -152,7 +167,24 @@ class WSClient {
   }
 }
 
-const WS_URL = import.meta.env.VITE_WS_URL || `ws://${window.location.host}/ws`;
+type TransportMode = 'rudp-sync' | 'tcp-sync' | 'tcp-nosync';
+
+const WS_PATHS: Record<TransportMode, string> = {
+  'rudp-sync':  '/ws',
+  'tcp-sync':   '/ws-tcp-sync',
+  'tcp-nosync': '/ws-tcp-nosync',
+};
+
+function getInitialMode(): TransportMode {
+  const param = new URLSearchParams(window.location.search).get('mode');
+  if (param === 'tcp-sync' || param === 'tcp-nosync' || param === 'rudp-sync') return param;
+  return 'rudp-sync';
+}
+
+function wsUrlForMode(mode: TransportMode): string {
+  if (import.meta.env.VITE_WS_URL) return import.meta.env.VITE_WS_URL as string;
+  return `ws://${window.location.host}${WS_PATHS[mode]}`;
+}
 
 // ── CSS injection ─────────────────────────────────────────────────────────────
 function GlobalStyles() {
@@ -212,7 +244,9 @@ function GlobalStyles() {
 
 // ── Main App ──────────────────────────────────────────────────────────────────
 export default function App() {
+  const [mode, setMode] = useState<TransportMode>(getInitialMode());
   const [phase, setPhase] = useState<Phase>("boot");
+  const [connectKey, setConnectKey] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const wsRef = useRef<WSClient | null>(null);
 
@@ -262,61 +296,74 @@ export default function App() {
     return startAtServerMs + durationSec * 1000 - serverNow;
   }, [phase, startAtServerMs, durationSec, serverNow]);
 
-  // ── Boot: connect → sync → schedule → waiting ────────────────────────────
+  // ── Boot: connect → sync (adaptive) → schedule → refine → exam ──────────
+  // Phases:
+  //  1. Quick 3-round bootstrap (50 ms cadence) → schedule_req
+  //  2. Adaptive refinement every 200 ms; stop when offset stdev < 1.5 ms
+  //     over last 5 samples, T₀ − 8 s reached, or 20 total samples
+  //  3. Fresh 3-round sample at T₀ − 5 s (most accurate D_i for server)
+  //  4. Sleep to T₀ → exam_req → open
   useEffect(() => {
+    if (phase !== "connecting") return;
     let alive = true;
+    const allSamples: SyncSample[] = [];
+
+    async function doTimeReq(ws: WSClient): Promise<SyncSample> {
+      const req_id = rid();
+      const t0 = nowMs();
+      const resp = await ws.request<{ type: "time_resp"; req_id: string; server_now_ms: number }>(
+        { type: "time_req", req_id, client_t0_ms: t0 }, 2500
+      );
+      const t1 = nowMs();
+      const rtt = t1 - t0;
+      return { rtt, offset: resp.server_now_ms - (t0 + rtt / 2), at: t1 };
+    }
+    function bestSampleNow() {
+      return [...allSamples].sort((a, b) => a.rtt - b.rtt)[0];
+    }
+    function localT0Ms(serverT0: number) {
+      return serverT0 - bestSampleNow().offset;
+    }
+    function updateQuality() {
+      const b = bestSampleNow().rtt;
+      setSyncQuality(b < 40 ? "טוב" : b < 120 ? "בינוני" : "חלש");
+    }
+
     async function run() {
       try {
-        setPhase("connecting");
-        const ws = new WSClient(WS_URL);
+        // ─ Connect ────────────────────────────────────────────────────────
+        const ws = new WSClient(wsUrlForMode(mode));
         wsRef.current = ws;
         await ws.connect((msg) => {
-          if (msg.type === "connection_info") {
-            setConnInfo(msg);
-          }
+          if (msg.type === "connection_info") setConnInfo(msg);
         });
         if (!alive) return;
 
         ws.send({ type: "hello", client_id: `web-${Math.random().toString(36).slice(2, 8)}` });
         setPhase("syncing");
 
-        const samples: SyncSample[] = [];
-        const rounds = 12;
-        for (let i = 0; i < rounds; i++) {
-          const req_id = rid();
-          const t0 = nowMs();
-          const resp = await ws.request<{ type: "time_resp"; req_id: string; server_now_ms: number }>(
-            { type: "time_req", req_id, client_t0_ms: t0 }, 2500
-          );
-          const t1 = nowMs();
-          const rtt = t1 - t0;
-          const offset = resp.server_now_ms - (t0 + rtt / 2);
-          samples.push({ rtt, offset, at: t1 });
-          setSyncSamples([...samples]);
-          await new Promise((r) => setTimeout(r, 120));
+        // ─ Phase 1: 3-round quick bootstrap (50 ms cadence) ──────────────
+        for (let i = 0; i < 3; i++) {
+          if (!alive) return;
+          const s = await doTimeReq(ws);
+          allSamples.push(s);
+          setSyncSamples([...allSamples]);
+          if (i < 2) await new Promise(r => setTimeout(r, 50));
         }
+        updateQuality();
 
-        const best = [...samples].sort((a, b) => a.rtt - b.rtt)[0];
-        if (best.rtt < 40) setSyncQuality("טוב");
-        else if (best.rtt < 120) setSyncQuality("בינוני");
-        else setSyncQuality("חלש");
-
-        // Compute [min, median, max] RTT from all 12 NTP samples.
-        // Server uses these 3 values to apply the friend's D_i formula:
-        //   RTT_med = median, J_rtt = max - min, D_i = (RTT_med + J_rtt) / 2
-        const sortedRtts = [...samples].sort((a, b) => a.rtt - b.rtt).map(s => s.rtt);
-        const rttSamples = [
-          sortedRtts[0],                                        // min
-          sortedRtts[Math.floor(sortedRtts.length / 2)],       // median
-          sortedRtts[sortedRtts.length - 1],                    // max
-        ];
-
+        // ─ schedule_req with Phase 1 RTT data ────────────────────────────
         const sched = await ws.request<{
           type: "schedule_resp"; req_id: string; exam_id: string;
           start_at_server_ms: number; duration_sec: number;
           deliver_delay_ms?: number; max_rtt_ms?: number;
           my_rtt_ms?: number; relay_candidate?: string | null;
-        }>({ type: "schedule_req", req_id: rid(), rtt_samples: rttSamples, offset_ms: offsetMs }, 4000);
+        }>({
+          type: "schedule_req", req_id: rid(),
+          rtt_samples: buildRttSamples(allSamples),
+          offset_ms: bestSampleNow().offset,
+        }, 4000);
+        if (!alive) return;
 
         setExamId(sched.exam_id);
         setStartAtServerMs(sched.start_at_server_ms);
@@ -330,85 +377,78 @@ export default function App() {
           });
         }
         setPhase("waiting");
-      } catch (e: any) {
-        setError(e?.message ?? String(e));
-        setPhase("error");
-      }
-    }
-    run();
-    return () => { alive = false; wsRef.current?.close(); wsRef.current = null; };
-  }, []);
 
-  // Fresh RTT samples collected 5 s before T₀ (second NTP run)
-  const freshRttRef = useRef<{ rtt_samples: number[]; offset_ms: number } | null>(null);
-
-  // ── waiting → open: fetch exam at T₀, record opened_at ──────────────────
-  useEffect(() => {
-    if (phase !== "waiting") return;
-    if (!examId || !startAtServerMs) return;
-    const localStart = startAtServerMs - offsetMs;
-    const delay = clamp(localStart - nowMs(), 0, 60_000);
-
-    // ── Pre-exam NTP refresh (3 rounds, 5 s before T₀) ───────────────────
-    // Re-measures RTT/offset so the server gets fresh D_i data right before
-    // the staggered send coordinator fires. Skipped if T₀ is too close.
-    let refreshTimer: ReturnType<typeof setTimeout> | null = null;
-    if (delay > 10_000) {
-      refreshTimer = setTimeout(async () => {
-        const ws = wsRef.current;
-        if (!ws) return;
-        const fresh: SyncSample[] = [];
-        for (let i = 0; i < 3; i++) {
+        // ─ Phase 2: Adaptive refinement during wait ───────────────────────
+        // Collect one sample every 200 ms. Stop when the offset stdev over
+        // the last 5 samples is < 1.5 ms (converged), fewer than 8 s remain
+        // to T₀, or 20 total samples have been gathered.
+        while (alive) {
+          const msToT0 = localT0Ms(sched.start_at_server_ms) - nowMs();
+          if (msToT0 < 8000) break;
+          if (syncHasConverged(allSamples)) break;
+          if (allSamples.length >= 20) break;
+          await new Promise(r => setTimeout(r, 200));
+          if (!alive) return;
           try {
-            const t0 = nowMs();
-            const resp = await ws.request<{ type: "time_resp"; req_id: string; server_now_ms: number }>(
-              { type: "time_req", req_id: rid(), client_t0_ms: t0 }, 2500
-            );
-            const t1 = nowMs();
-            const rtt = t1 - t0;
-            fresh.push({ rtt, offset: resp.server_now_ms - (t0 + rtt / 2), at: t1 });
-            await new Promise(r => setTimeout(r, 100));
-          } catch { /* non-critical — skip */ }
+            const s = await doTimeReq(ws);
+            allSamples.push(s);
+            setSyncSamples([...allSamples]);
+            updateQuality();
+          } catch { /* network blip — try next round */ }
         }
-        if (fresh.length >= 1) {
-          const sorted = [...fresh].sort((a, b) => a.rtt - b.rtt);
-          freshRttRef.current = {
-            rtt_samples: [
-              sorted[0].rtt,
-              sorted[Math.floor(sorted.length / 2)].rtt,
-              sorted[sorted.length - 1].rtt,
-            ],
-            offset_ms: sorted[0].offset,   // best-RTT offset, same as initial sync
-          };
-        }
-      }, delay - 5_000);
-    }
 
-    const t = window.setTimeout(async () => {
-      try {
-        const ws = wsRef.current;
-        if (!ws) throw new Error("Socket לא זמין");
+        // ─ Phase 3: Fresh 3-round sample at T₀ − 5 s ────────────────────
+        // These are sent with exam_req so the server uses the most accurate
+        // D_i right when the staggered-send coordinator fires.
+        const msToRefresh = localT0Ms(sched.start_at_server_ms) - nowMs() - 5000;
+        if (msToRefresh > 100 && alive) {
+          await new Promise(r => setTimeout(r, msToRefresh));
+        }
+        if (!alive) return;
+        const freshSamples: SyncSample[] = [];
+        for (let i = 0; i < 3; i++) {
+          if (!alive) return;
+          try {
+            const s = await doTimeReq(ws);
+            freshSamples.push(s);
+            allSamples.push(s);
+            setSyncSamples([...allSamples]);
+          } catch { /* non-critical */ }
+          if (i < 2) await new Promise(r => setTimeout(r, 100));
+        }
+
+        // ─ Phase 4: Sleep to T₀, then send exam_req ──────────────────────
+        const msToExam = localT0Ms(sched.start_at_server_ms) - nowMs();
+        if (msToExam > 0 && alive) {
+          await new Promise(r => setTimeout(r, clamp(msToExam, 0, 120_000)));
+        }
+        if (!alive) return;
+
+        const freshForExam = freshSamples.length >= 1 ? {
+          rtt_samples: buildRttSamples(freshSamples),
+          offset_ms: [...freshSamples].sort((a, b) => a.rtt - b.rtt)[0].offset,
+        } : null;
+
         const openedAt = nowMs();
-        // Include fresh RTT samples if the pre-exam refresh completed
-        const fresh = freshRttRef.current;
-        const exResp = await ws.request<{ type: "exam_resp"; req_id: string; exam: ExamPayload;
+        const exResp = await ws.request<{
+          type: "exam_resp"; req_id: string; exam: ExamPayload;
           server_sent_at_ms?: number; bridge_forwarded_at_ms?: number;
           sync_hold_ms?: number; sync_target_ms?: number;
-          max_rtt_ms?: number; my_rtt_ms?: number; deliver_delay_ms?: number }>(
-          { type: "exam_req", req_id: rid(), exam_id: examId,
-            ...(fresh ? { rtt_samples: fresh.rtt_samples, offset_ms: fresh.offset_ms } : {}) },
-          6000
-        );
-        // Capture exact browser receipt time for sync proof
+          max_rtt_ms?: number; my_rtt_ms?: number; deliver_delay_ms?: number;
+        }>({
+          type: "exam_req", req_id: rid(), exam_id: sched.exam_id,
+          ...(freshForExam ? { rtt_samples: freshForExam.rtt_samples, offset_ms: freshForExam.offset_ms } : {}),
+        }, 6000);
+
         const browserReceivedAt = Date.now();
         if (exResp.server_sent_at_ms) {
           setSyncProof({
-            server_sent_at_ms:    exResp.server_sent_at_ms,
+            server_sent_at_ms:      exResp.server_sent_at_ms,
             bridge_forwarded_at_ms: exResp.bridge_forwarded_at_ms ?? 0,
             browser_received_at_ms: browserReceivedAt,
-            max_rtt_ms:  exResp.max_rtt_ms  ?? 0,
-            my_rtt_ms:   exResp.my_rtt_ms   ?? 0,
-            sync_hold_ms:  exResp.sync_hold_ms  ?? exResp.deliver_delay_ms ?? 0,
+            max_rtt_ms:    exResp.max_rtt_ms  ?? 0,
+            my_rtt_ms:     exResp.my_rtt_ms   ?? 0,
+            sync_hold_ms:  exResp.sync_hold_ms ?? exResp.deliver_delay_ms ?? 0,
             sync_target_ms: exResp.sync_target_ms ?? 0,
           });
         }
@@ -426,12 +466,12 @@ export default function App() {
         setError(e?.message ?? String(e));
         setPhase("error");
       }
-    }, delay);
-    return () => {
-      window.clearTimeout(t);
-      if (refreshTimer) window.clearTimeout(refreshTimer);
-    };
-  }, [phase, examId, startAtServerMs, offsetMs]);
+    }
+    run();
+    return () => { alive = false; wsRef.current?.close(); wsRef.current = null; };
+  }, [connectKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const syncIsConverged = useMemo(() => syncHasConverged(syncSamples), [syncSamples]);
 
   // ── open → running: student clicks start ─────────────────────────────────
   const handleStartExam = async () => {
@@ -588,8 +628,9 @@ export default function App() {
       <div style={s.page}>
         {topBar}
         <main style={s.main}>
-          {phase === "connecting" && <ConnectingScreen url={WS_URL} connInfo={connInfo} />}
-          {phase === "syncing"    && <SyncPanel samples={syncSamples} total={12} connInfo={connInfo} />}
+          {phase === "boot"       && <ModeSelector onSelect={(m) => { setMode(m); setPhase("connecting"); setConnectKey(k => k + 1); }} />}
+          {phase === "connecting" && <ConnectingScreen url={wsUrlForMode(mode)} connInfo={connInfo} />}
+          {phase === "syncing"    && <SyncPanel samples={syncSamples} total={3} connInfo={connInfo} />}
           {phase === "waiting"    && (
             <WaitingRoom
               examId={examId}
@@ -599,6 +640,8 @@ export default function App() {
               bestSample={bestSample}
               msToStart={msToStart}
               syncDelivery={syncDelivery}
+              syncCount={syncSamples.length}
+              syncConverged={syncIsConverged}
             />
           )}
           {phase === "open" && exam && startAtServerMs && (
@@ -607,6 +650,7 @@ export default function App() {
               openedAtMs={openedAtMs!}
               startAtServerMs={startAtServerMs}
               syncProof={syncProof}
+              mode={mode}
               onStart={handleStartExam}
             />
           )}
@@ -625,7 +669,7 @@ export default function App() {
             />
           )}
           {phase === "submitted" && <SubmittedScreen />}
-          {phase === "error"     && <ErrorScreen error={error ?? "שגיאה לא ידועה"} url={WS_URL} />}
+          {phase === "error"     && <ErrorScreen error={error ?? "שגיאה לא ידועה"} url={wsUrlForMode(mode)} />}
         </main>
       </div>
     </>
@@ -640,6 +684,84 @@ type ConnInfo = {
 type SyncDelivery = {
   deliver_delay_ms: number; max_rtt_ms: number; my_rtt_ms: number; relay_candidate: string | null;
 } | null;
+
+// ── Mode selector (boot phase) ────────────────────────────────────────────────
+function ModeSelector({ onSelect }: { onSelect: (m: TransportMode) => void }) {
+  const modes: { id: TransportMode; label: string; sub: string; badge: string; badgeBg: string; badgeColor: string }[] = [
+    {
+      id: 'rudp-sync',
+      label: 'RUDP + Sync',
+      sub: 'Custom reliable UDP · staggered send · self-correcting bridge hold',
+      badge: 'SYNCHRONIZED',
+      badgeBg: '#dcfce7',
+      badgeColor: '#15803d',
+    },
+    {
+      id: 'tcp-sync',
+      label: 'TCP + Sync',
+      sub: 'Plain TCP · same staggered-send coordination as RUDP mode',
+      badge: 'SYNCHRONIZED',
+      badgeBg: '#dbeafe',
+      badgeColor: '#1d4ed8',
+    },
+    {
+      id: 'tcp-nosync',
+      label: 'TCP + No Sync',
+      sub: 'Plain TCP · immediate send · baseline (no coordination)',
+      badge: 'BASELINE',
+      badgeBg: '#fef3c7',
+      badgeColor: '#92400e',
+    },
+  ];
+
+  return (
+    <div className="fade-in" style={{ ...s.centerCard, maxWidth: 560 }}>
+      <div style={{ fontSize: 32, marginBottom: 8 }}>🎓</div>
+      <div style={{ fontWeight: 700, fontSize: 22, color: "#0f172a", marginBottom: 6 }}>
+        מערכת הבחינה
+      </div>
+      <div style={{ fontSize: 14, color: "#64748b", marginBottom: 28, textAlign: "center" }}>
+        בחר מצב תחבורה להדגמה
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%" }}>
+        {modes.map((m) => (
+          <button
+            key={m.id}
+            onClick={() => onSelect(m.id)}
+            style={{
+              width: "100%", padding: "16px 20px",
+              background: "#fff", border: "1.5px solid #e2e8f0",
+              borderRadius: 12, cursor: "pointer", textAlign: "right",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              transition: "border-color 0.15s, box-shadow 0.15s",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.borderColor = "#93c5fd";
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 2px 8px rgba(37,99,235,0.12)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.borderColor = "#e2e8f0";
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 1px 3px rgba(0,0,0,0.06)";
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 15, color: "#0f172a", marginBottom: 4 }}>{m.label}</div>
+              <div style={{ fontSize: 12, color: "#64748b" }}>{m.sub}</div>
+            </div>
+            <span style={{
+              padding: "3px 10px", borderRadius: 99, fontSize: 11, fontWeight: 700,
+              fontFamily: "monospace", whiteSpace: "nowrap", marginLeft: 12,
+              background: m.badgeBg, color: m.badgeColor,
+            }}>
+              {m.badge}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ── Connecting ────────────────────────────────────────────────────────────────
 function ConnectingScreen({ url, connInfo }: { url: string; connInfo: ConnInfo }) {
@@ -714,7 +836,26 @@ type SyncProofData = {
   max_rtt_ms: number; my_rtt_ms: number; sync_hold_ms: number; sync_target_ms: number;
 } | null;
 
-function SyncProofCard({ sp }: { sp: NonNullable<SyncProofData> }) {
+function SyncProofCard({ sp, mode }: { sp: NonNullable<SyncProofData>; mode?: TransportMode }) {
+  if (mode === 'tcp-nosync' && !sp.server_sent_at_ms) {
+    return (
+      <div style={{ marginTop: 16, background: "#fefce8", border: "1px solid #fde047",
+                    borderRadius: 10, padding: "14px 16px", textAlign: "center" }}>
+        <div style={{ fontWeight: 700, fontSize: 12, color: "#92400e", marginBottom: 6 }}>
+          ⚠ Sync disabled — baseline mode
+        </div>
+        <div style={{ fontSize: 11, color: "#78350f" }}>
+          TCP + No Sync: server sends immediately, no staggered delivery or bridge hold.
+          Timing fields absent — this is the uncoordinated baseline for comparison.
+        </div>
+        <span style={{ display: "inline-block", marginTop: 8, padding: "3px 10px", borderRadius: 99,
+                       fontSize: 11, fontWeight: 700, fontFamily: "monospace",
+                       background: "#fef3c7", color: "#92400e" }}>
+          ⚠ UNCOORDINATED
+        </span>
+      </div>
+    );
+  }
   const T0      = sp.server_sent_at_ms;
   const transit = sp.bridge_forwarded_at_ms > 0 ? sp.bridge_forwarded_at_ms - T0 : null;
   const total   = sp.browser_received_at_ms - T0;
@@ -737,6 +878,14 @@ function SyncProofCard({ sp }: { sp: NonNullable<SyncProofData> }) {
       <div style={{ fontWeight: 700, fontSize: 12, color: synced ? "#15803d" : "#92400e",
                     marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
         <span>{synced ? "✓" : "⚠"}</span> Synchronized Delivery Proof — exam_resp
+        {mode && (
+          <span style={{ marginLeft: "auto", padding: "2px 8px", borderRadius: 99, fontSize: 10,
+                         fontFamily: "monospace", fontWeight: 700,
+                         background: mode === 'rudp-sync' ? "#dcfce7" : "#dbeafe",
+                         color: mode === 'rudp-sync' ? "#15803d" : "#1d4ed8" }}>
+            {mode === 'rudp-sync' ? 'RUDP+Sync' : 'TCP+Sync'}
+          </span>
+        )}
       </div>
       {row("Server sent at",         formatTime(T0))}
       {transit !== null && row("Bridge forwarded at", `+${transit.toFixed(1)} ms`)}
@@ -871,10 +1020,11 @@ function SyncPanel({ samples, total, connInfo }: { samples: SyncSample[]; total:
 // ── Waiting room ──────────────────────────────────────────────────────────────
 function WaitingRoom({
   examId, startAtServerMs, durationSec, offsetMs, bestSample, msToStart, syncDelivery,
+  syncCount, syncConverged,
 }: {
   examId: string | null; startAtServerMs: number | null; durationSec: number | null;
   offsetMs: number; bestSample: SyncSample | null; msToStart: number | null;
-  syncDelivery: SyncDelivery;
+  syncDelivery: SyncDelivery; syncCount: number; syncConverged: boolean;
 }) {
   const totalSec = durationSec ?? 0;
   const h = Math.floor(totalSec / 3600);
@@ -923,6 +1073,11 @@ function WaitingRoom({
           <strong>הפרש שעון מחושב:</strong> {bestSample ? `${bestSample.offset.toFixed(1)} ms` : "—"} &nbsp;·&nbsp;
           <strong>התחלה מקומית:</strong>{" "}
           {startAtServerMs ? formatTime(startAtServerMs - offsetMs).slice(0, 8) : "—"}
+        </div>
+        <div style={{ fontSize: 11, marginTop: 4, color: syncConverged ? "#16a34a" : "#94a3b8" }}>
+          {syncConverged
+            ? `✓ שעון מסונכרן — ${syncCount} דגימות, מיוצב`
+            : `🔄 מדייק שעון... (${syncCount} דגימות)`}
         </div>
 
         <div style={{
@@ -1186,12 +1341,13 @@ function ExamView({
 
 // ── Exam opened (waiting for student to click start) ─────────────────────────
 function ExamOpenedScreen({
-  exam, openedAtMs, startAtServerMs, syncProof, onStart,
+  exam, openedAtMs, startAtServerMs, syncProof, mode, onStart,
 }: {
   exam: ExamPayload;
   openedAtMs: number;
   startAtServerMs: number;
   syncProof: SyncProofData;
+  mode: TransportMode;
   onStart: () => void;
 }) {
   const deltaMs = Math.round(openedAtMs - startAtServerMs);
@@ -1244,7 +1400,24 @@ function ExamOpenedScreen({
       </div>
 
       {/* Self-correcting sync proof — shows actual bridge hold and delta from target */}
-      {syncProof && <SyncProofCard sp={syncProof} />}
+      {syncProof && <SyncProofCard sp={syncProof} mode={mode} />}
+      {!syncProof && mode === 'tcp-nosync' && (
+        <div style={{ marginTop: 16, background: "#fefce8", border: "1px solid #fde047",
+                      borderRadius: 10, padding: "14px 16px", textAlign: "center" }}>
+          <div style={{ fontWeight: 700, fontSize: 12, color: "#92400e", marginBottom: 6 }}>
+            ⚠ Sync disabled — baseline mode
+          </div>
+          <div style={{ fontSize: 11, color: "#78350f" }}>
+            TCP + No Sync: server sends immediately, no staggered delivery or bridge hold.
+            Use this mode as the uncoordinated baseline to compare against RUDP+Sync / TCP+Sync.
+          </div>
+          <span style={{ display: "inline-block", marginTop: 8, padding: "3px 10px", borderRadius: 99,
+                         fontSize: 11, fontWeight: 700, fontFamily: "monospace",
+                         background: "#fef3c7", color: "#92400e" }}>
+            ⚠ UNCOORDINATED
+          </span>
+        </div>
+      )}
 
       <button
         style={{ ...s.btnSubmit, marginTop: 28, width: "100%", fontSize: 17, padding: "16px 0", background: "#2563eb" }}

@@ -1,0 +1,11 @@
+# Wireshark filters for 05_tcp_nosync
+# Open: wireshark C:\Users\ronelgazar\Documents\University\year2\Semester1\Computer Networks\final\FinalProject-ComputerNetworks\captures\05_tcp_nosync\*.pcap
+
+#  TCP stream (NL-JSON)
+#    tcp.port == 9001
+#  No sync fields in exam_resp
+#    tcp.port == 9001  [look for absence of server_sent_at_ms]
+#  Uncoordinated receive times
+#    merge client-1.pcap + client-2.pcap, tcp.port==9001
+#  Compare spread vs scenario 02
+#    bridge_forwarded_at_ms difference between clients

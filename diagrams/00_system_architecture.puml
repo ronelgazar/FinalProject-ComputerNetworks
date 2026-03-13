@@ -1,0 +1,152 @@
+@startuml 00_system_architecture
+!theme plain
+top to bottom direction
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam nodesep 25
+skinparam ranksep 40
+
+skinparam rectangle {
+  BackgroundColor #f0f4ff
+  BorderColor #93c5fd
+  BorderThickness 2
+  FontColor #1e3a5f
+  FontSize 11
+  FontStyle bold
+}
+skinparam package {
+  BackgroundColor #f8fafc
+  BorderColor #cbd5e1
+  FontColor #334155
+  FontStyle bold
+  FontSize 12
+}
+skinparam database {
+  BackgroundColor #faf5ff
+  BorderColor #a855f7
+  FontColor #6b21a8
+  FontSize 10
+}
+
+title <size:18><color:#1d4ed8>**🐳 ארכיטקטורת המערכת — רשת הגשת מבחנים**</color></size>\\n<size:10><color:#64748b>exam-net 10.99.0.0/24  |  Docker Compose  |  docker compose up --scale client=N</color></size>
+
+' ══════════════════════════════════════════════════
+' HOST — מחוץ לDocker
+' ══════════════════════════════════════════════════
+package "💻 מחשב המארח — מחוץ ל-Docker" #fefce8 {
+  rectangle "👤 דפדפן סטודנט\nגישה: http://<client-IP>:80" as browser #dbeafe
+  rectangle "📊 לוח בקרה מרצה\nprof_dashboard.py  :7777\nnetem · dns-mode · השוואת תעבורה" as prof #e0f2fe
+}
+
+' ══════════════════════════════════════════════════
+' DOCKER COMPOSE BOUNDARY
+' ══════════════════════════════════════════════════
+package "🐳 Docker Compose — exam-net  10.99.0.0/24" #f0f9ff {
+
+  ' ── CLIENT CONTAINERS (scalable) ─────────────────
+  package "📦 קונטיינרי לקוח  [--scale client=N]   IP מוקצה ע״י DHCP  (10.99.0.100+)" #fffbeb {
+
+    ' client-1 — full detail
+    package "🐳 client-1  (10.99.0.100)   Dockerfile.client: multi-stage node+python   supervisord מנהל 4 תהליכים" #fef3c7 {
+
+      rectangle "🌐 nginx  :80\n————————————————————\nמגיש React SPA מ-build סטטי\nreverse proxy פנימי — כל proxy_pass ל-localhost:\n  /ws            → localhost:8081\n  /ws-tcp-sync   → localhost:8082\n  /ws-tcp-nosync → localhost:8083" as nginx #fef9c3
+
+      rectangle "ws_bridge.py  localhost:8081\n[ RUDP + Sync ]\n————————————————————\nמחבר לשרת RUDP  (DNS: server.exam.lan)\nפענוח ZS wire  (b'ZS'+meta+zlib)\nעיכוב מתקן עצמי:\ntarget_ms = sent_at + RTT/2 + 5ms" as br_rudp #e0fdf4
+
+      rectangle "ws_bridge_tcp.py  localhost:8082\n[ TCP + Sync   SYNC_ENABLED=1 ]\n————————————————————\nמחבר ל-tcp-sync.exam.lan:9001\nNL-JSON readline\nעיכוב עד T_arr" as br_tcps #fdf4ff
+
+      rectangle "ws_bridge_tcp.py  localhost:8083\n[ TCP + NoSync   SYNC_ENABLED=0 ]\n————————————————————\nמחבר ל-tcp-nosync.exam.lan:9001\nNL-JSON readline\nהעברה מיידית — בסיס השוואה" as br_tcpn #fff7ed
+    }
+
+    rectangle "🐳 client-2  (10.99.0.101)\nאותה תמונה · אותם 4 תהליכים" as client2 #fef9c3
+    rectangle "🐳 client-N  (10.99.0.10x)\ndocker compose up --scale client=N" as clientN #fef9c3
+  }
+
+  ' ── INFRASTRUCTURE ───────────────────────────────
+  package "🐳 תשתית רשת" #e0f2fe {
+
+    rectangle "🏠 dhcp-server\n10.99.0.3  UDP:67\n————————————\ndhcp_server.py\nטווח: 10.99.0.100-149\nחכירה: 100 שניות" as dhcp #f0fdf4
+
+    package "🐳 היררכיית DNS — תמונה אחת, DNS_ROLE env, 4 קונטיינרים" #dbeafe {
+      rectangle "dns-resolver\n10.99.0.2  UDP:53\nresolver_server.py\nאיטרטיבי / רקורסיבי + מטמון" as dns_r #eff6ff
+      rectangle "dns-root\n10.99.0.10\nroot_server.py" as dns_root #eff6ff
+      rectangle "dns-tld  .lan\n10.99.0.11\ntld_server.py" as dns_tld #eff6ff
+      rectangle "dns-auth  exam.lan\n10.99.0.12  AA=1\nauth_server.py\nserver A ×3  |  tcp-sync/nosync A" as dns_auth #f0fff4
+    }
+  }
+
+  ' ── EXAM SERVERS ─────────────────────────────────
+  package "🐳 שרתי מבחן RUDP   UDP:9000   3 קונטיינרים — תמונה אחת" #f0fdf4 {
+    rectangle "rudp-server-1\n10.99.0.20\n————————————\nexam_server.py\nExamSendCoordinator\nD_i = f(RTT_med, J_rtt)\nT_send = T_arr - D_i\nZS wire: b'ZS'+meta+zlib\nRUDP sliding window + ARQ" as rudp1 #e0fdf4
+    rectangle "rudp-server-2\n10.99.0.21\nexam_server.py" as rudp2 #e0fdf4
+    rectangle "rudp-server-3\n10.99.0.22\nexam_server.py" as rudp3 #e0fdf4
+  }
+
+  package "🐳 שרתי מבחן TCP   TCP:9001   2 קונטיינרים" #fdf4ff {
+    rectangle "tcp-sync\n10.99.0.23  SYNC=1\n————————————\nexam_server_tcp.py\nExamSendCoordinator\nשליחה מדורגת · NL-JSON" as tcps #f3e8ff
+    rectangle "tcp-nosync\n10.99.0.24  SYNC=0\n————————————\nexam_server_tcp.py\nשליחה מיידית\nבסיס השוואה" as tcpn #fff7ed
+  }
+
+  ' ── STORAGE + ADMIN ──────────────────────────────
+  package "🐳 אחסון ומעקב" #f1f5f9 {
+    database "💾 exam-shared\n(Docker Named Volume)\nstart_at.txt  exam.json  clients.json" as svol
+    database "💾 answers-data\n(Docker Named Volume)\nanswers/{exam_id}/{client_id}.json" as avol
+    rectangle "📋 admin-server\n10.99.0.30  :9999\n————————————\nadmin_server.py  FastAPI\nניטור · הוכחת סנכרון\nהעלאת מבחן · צפייה בתשובות" as admin #fef2ff
+  }
+
+}
+
+' ══════════════════════════════════════════════════
+' ARROWS
+' ══════════════════════════════════════════════════
+
+' DHCP מקצה IP לקונטיינר הלקוח בעת הפעלה
+dhcp -[#4ade80]-> nginx : "① DHCPACK\nIP מוקצה"
+
+' דפדפן מגיע ל-nginx
+browser -[#2563eb]-> nginx : "② HTTP :80"
+
+' nginx → bridges (פנימי localhost — מיוצג כחצים בתוך הקונטיינר)
+nginx -[#16a34a]-> br_rudp  : "localhost:8081"
+nginx -[#7c3aed]-> br_tcps  : "localhost:8082"
+nginx -[#ea580c]-> br_tcpn  : "localhost:8083"
+
+' bridges → DNS (רק RUDP bridge מוצג — TCP bridges זהים)
+br_rudp -[#60a5fa]-> dns_r : "③ DNS Q\nserver.exam.lan A?"
+dns_r   -[#94a3b8]-> dns_root
+dns_root -[#94a3b8]-> dns_tld
+dns_tld  -[#94a3b8]-> dns_auth
+
+' bridges → exam servers
+br_rudp  -[#16a34a]->        rudp1 : "④ RUDP HS\n+ RTT sync\n+ exam_req"
+br_rudp  -[#94a3b8,dashed]-> rudp2 : "round-robin"
+br_rudp  -[#94a3b8,dashed]-> rudp3
+br_tcps  -[#7c3aed]->        tcps  : "④ TCP\n+ exam_req"
+br_tcpn  -[#ea580c]->        tcpn  : "④ TCP\n+ exam_req"
+
+' exam servers → volumes
+rudp1 -[#2563eb]->        svol : "⑤ start_at"
+rudp1 -[#2563eb]->        avol : "תשובות"
+tcps  -[#7c3aed,dashed]-> svol
+tcps  -[#7c3aed,dashed]-> avol
+tcpn  -[#ea580c,dashed]-> avol
+
+' admin + prof
+admin   -[#a855f7]->        svol
+admin   -[#a855f7,dashed]-> avol
+browser -[#94a3b8,dashed]-> admin : "⑥ :9999"
+prof    -[#0ea5e9,dashed]-> nginx  : "docker exec\nnetem / dns-mode"
+
+legend bottom right
+  | <color:#16a34a><b>——</b></color> | RUDP + Sync |
+  | <color:#7c3aed><b>——</b></color> | TCP + Sync  |
+  | <color:#ea580c><b>——</b></color> | TCP + NoSync |
+  | <color:#60a5fa><b>——</b></color> | DNS resolution |
+  | <color:#94a3b8><b>- -</b></color> | round-robin / משני |
+  | <b>localhost:*</b> | proxy פנימי באותו קונטיינר |
+endlegend
+
+@enduml

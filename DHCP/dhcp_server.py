@@ -4,9 +4,8 @@ from scapy.all import BOOTP, DHCP
 # ================= CONFIG =================
 BIND_IP = "0.0.0.0"
 
-# "רגיל": 67/68 (דורש sudo). לפיתוח בלי sudo: 1067/1068.
-SERVER_PORT = 1067
-CLIENT_PORT = 1068
+SERVER_PORT = 67
+CLIENT_PORT = 68
 
 POOL_START = "10.99.0.100"
 POOL_END   = "10.99.0.149"
@@ -107,7 +106,10 @@ def main():
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     sock.bind((BIND_IP, SERVER_PORT))
 
-    print(f"[DHCP] listen {BIND_IP}:{SERVER_PORT} pool {POOL_START}-{POOL_END}")
+    # Resolve our own IP (used as DHCP Server Identifier option 54)
+    server_id_ip = os.environ.get("SERVER_IP") or socket.gethostbyname(socket.gethostname())
+
+    print(f"[DHCP] listen {BIND_IP}:{SERVER_PORT} server_id={server_id_ip} pool {POOL_START}-{POOL_END}")
 
     while True:
         data, addr = sock.recvfrom(4096)
@@ -133,8 +135,6 @@ def main():
         for m in list(offers.keys()):
             if offers[m]["exp"] <= t:
                 offers.pop(m, None)
-
-        server_id_ip = addr[0]  # מספיק לבדיקות מקומיות
 
         if mtype == "discover":
             # אם כבר יש lease פעיל -> מציעים אותו, אחרת מקצים חדש (אבל לא "סוגרים" עד REQUEST)

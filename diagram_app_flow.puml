@@ -1,0 +1,268 @@
+@startuml diagram_app_flow
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam defaultFontColor #1a1a2e
+skinparam shadowing false
+skinparam roundcorner 12
+
+skinparam sequenceArrowThickness 1.8
+skinparam sequenceArrowColor #2563eb
+skinparam sequenceArrowFontColor #374151
+skinparam sequenceArrowFontSize 11
+skinparam sequenceArrowFontStyle bold
+skinparam sequenceLifeLineBorderColor #93c5fd
+skinparam sequenceLifeLineBackgroundColor #f8fafc
+
+skinparam participantBackgroundColor #f0f4ff
+skinparam participantBorderColor #93c5fd
+skinparam participantBorderThickness 2
+skinparam participantFontColor #1e3a5f
+skinparam participantFontSize 12
+skinparam participantFontStyle bold
+
+skinparam actorBackgroundColor #dbeafe
+skinparam actorBorderColor #3b82f6
+skinparam actorFontColor #1e3a8a
+skinparam actorFontStyle bold
+
+skinparam noteBackgroundColor #fefce8
+skinparam noteBorderColor #f59e0b
+skinparam noteBorderThickness 1.5
+skinparam noteFontColor #374151
+skinparam noteFontSize 11
+
+skinparam dividerBackgroundColor #e0f2fe
+skinparam dividerBorderColor #0ea5e9
+skinparam dividerFontColor #0369a1
+skinparam dividerFontStyle bold
+skinparam dividerFontSize 13
+
+skinparam groupBackgroundColor #f8fafc
+skinparam groupBorderColor #94a3b8
+skinparam groupFontColor #1e3a5f
+skinparam groupFontStyle bold
+
+autonumber "<font color=#6b7280><b>( 00 )</b></font>"
+
+title <size:20><color:#1d4ed8>**זרימת האפליקציה המלאה**</color></size>\n<size:12><color:#64748b>RTT סנכרון  →  ExamSendCoordinator  →  RUDP  →  Bridge Hold  →  הגשה</color></size>
+
+' ── Participants ──────────────────────────────────────────
+actor       "👤 לקוח A\n(RTT קצר ~11ms)"   as cA  #dbeafe
+actor       "👤 לקוח B\n(RTT ארוך ~39ms)"  as cB  #fce7f3
+participant "🔗 ws_bridge\n(בכל לקוח)"     as br  #fffbeb
+participant "🖥 exam-server\nRUDP :9000"    as ex  #f0fdf4
+participant "💾 shared volume\nstart_at.txt" as vol #faf5ff
+
+' ══════════════════════════════════════════════════════════
+== ⏱  שלב 1 — מדידת RTT  (Cristian + Adaptive, 12 סבבים) ==
+' ══════════════════════════════════════════════════════════
+
+group Cristian Algorithm [סבבים 1–4: מדידת בסיס]
+  cA -> br : {"type":"time_req", "t1": T1}
+  activate br
+  br -> ex : RUDP DATA [time_req]
+  activate ex
+  ex --> br : RUDP DATA [time_resp]\nserver_now_ms: T_server
+  deactivate ex
+  br --> cA : {"type":"time_resp", "server_now_ms": T_server}
+  deactivate br
+  note right of cA
+    **חישוב Cristian:**
+    RTT    = T2 − T1
+    offset = T_server − (T1 + T2) / 2
+  end note
+end group
+
+group Adaptive Phase [סבבים 5–12: דיוק מוגבר כש-RTT יורד]
+  cA -> br : {"type":"time_req", "t1": T1}
+  activate br
+  br -> ex : RUDP DATA [time_req]
+  activate ex
+  ex --> br : RUDP DATA [time_resp]
+  deactivate ex
+  br --> cA : {"type":"time_resp"}
+  deactivate br
+  note right of cA
+    **לאחר 12 סבבים:**
+    offset_ms = ממוצע משוקלל
+    rtt_ms    = EWMA (α=0.125)
+    handshake_rtt_ms שמור ב-bridge
+  end note
+end group
+
+' ══════════════════════════════════════════════════════════
+== 📅  שלב 2 — Schedule Request ==
+' ══════════════════════════════════════════════════════════
+
+cA -> br : {"type":"schedule_req", "rtt_ms": 11.2}
+cB -> br : {"type":"schedule_req", "rtt_ms": 38.6}
+activate br
+br -> ex : RUDP DATA [schedule_req] (×2 לקוחות)
+activate ex
+
+note right of ex
+  **שרת 1:** כותב start_at.txt (אם ראשון)
+  **שרתים 2,3:** קוראים start_at.txt
+  ← כל השרתים מחזירים אותו start_at_ms
+end note
+
+ex --> br : {"type":"schedule_resp"\n"start_at_ms": 1700000120000\n"duration_sec": 3600\n"max_rtt_ms": 38.6\n"my_rtt_ms": 11.2}
+deactivate ex
+ex --> vol : write start_at.txt
+
+br --> cA : {"type":"schedule_resp", ...}
+br --> cB : {"type":"schedule_resp", ...}
+deactivate br
+
+note over cA, cB
+  **startAt = start_at_ms − offset_ms**
+  טיימר מקומי: countdown עד startAt
+  כל הלקוחות מחכים לאותה נקודת זמן
+end note
+
+' ══════════════════════════════════════════════════════════
+== 📝  שלב 3 — Exam Request & ExamSendCoordinator ==
+' ══════════════════════════════════════════════════════════
+
+cA -> br : {"type":"exam_req", "rtt_ms": 11.2}
+activate br
+br -> ex : RUDP DATA [exam_req] — לקוח A
+deactivate br
+
+cB -> br : {"type":"exam_req", "rtt_ms": 38.6}
+activate br
+br -> ex : RUDP DATA [exam_req] — לקוח B
+deactivate br
+
+activate ex
+note over ex #fff7ed
+  **חלון איסוף — 1.5 שניות**
+  מקבל exam_req + rtt_ms + handshake_rtt_ms
+  מכל הלקוחות המחוברים
+end note
+
+note over ex #fefce8
+  **חישוב D_i  (נתיב סימטרי — ללא offset):**
+
+  RTT_med  = median([11.2, 38.6]) = 24.9 ms
+  J_RTT    = 38.6 − 11.2         = 27.4 ms
+  D_i      = (RTT_med + J_RTT)/2 = 26.15 ms
+
+  T_arr    = start_at_ms + delta_fixed
+  T_send,A = T_arr − D_A  (שולח מוקדם יותר)
+  T_send,B = T_arr − D_B  (שולח מאוחר יותר)
+
+  ── עם offset (נתיב א-סימטרי): ──
+  d_down,i = RTT_med/2 − offset_i
+  D_i      = d_down,i + J_RTT/2
+end note
+
+group ZS Wire Format [pre-compressed — zero blocking אחרי sleep]
+  note over ex #f0fdf4
+    **לפני הcoordinator (בזמן חלון האיסוף):**
+    exam_json = json.dumps(exam)    ~27ms
+    exam_zl   = zlib.compress()     ~10ms
+
+    **hot path אחרי sleep (<1ms):**
+    meta = {server_sent_at_ms, max_rtt_ms, my_rtt_ms}
+    wire = b'ZS' + uint16(len(meta)) + meta + exam_zl
+  end note
+end group
+
+ex -> br : asyncio.sleep(T_send,A − now) →\nRUDP DATA **[ZS exam_resp]** → לקוח A
+note right of ex
+  **server_sent_at_ms**
+  מוחתם לפני השליחה
+end note
+
+ex -> br : asyncio.sleep(T_send,B − now) →\nRUDP DATA **[ZS exam_resp]** → לקוח B
+deactivate ex
+
+' ══════════════════════════════════════════════════════════
+== ⏳  שלב 4 — Bridge Self-Correcting Hold ==
+' ══════════════════════════════════════════════════════════
+
+activate br
+br -> br : פענוח ZS:\nmeta = json.loads(data[4:4+meta_len])\nexam = zlib.decompress(data[4+meta_len:])
+
+note right of br #eff6ff
+  **target_ms** = server_sent_at_ms + max_rtt/2 + 5ms
+  **hold_ms**   = max(0, target_ms − time.now())
+
+  ── תיקון עצמי: ──
+  RUDP עיכב ב-Δ → time.now() += Δ
+  → hold_ms −= Δ
+  → כל הלקוחות מגיעים ל-target_ms ± 5ms
+
+  ── netem (Layer 1, לפני hold): ──
+  delay + jitter + loss
+  מ-/tmp/netem_delay.json
+end note
+
+br --> cA : **{"type":"exam_resp"}**\nserver_sent_at_ms: 1700000120052\nbridge_forwarded_at_ms: 1700000120071\nsync_hold_ms: 14.3\nsync_target_ms: 1700000120076
+br --> cB : **{"type":"exam_resp"}**\n(hold ארוך יותר → forward ב-target_ms)
+deactivate br
+
+note over cA, cB #f0fdf4
+  **✓ שני הלקוחות קיבלו exam_resp ב-target_ms ± 5ms**
+  SyncProofCard בדפדפן מציג את ההוכחה
+end note
+
+' ══════════════════════════════════════════════════════════
+== 📦  שלב 5 — RUDP Sliding Window (internals) ==
+' ══════════════════════════════════════════════════════════
+
+group RUDP Congestion & Flow Control [חלון הזזה — chunks של 1200 בייט]
+  note over br, ex #faf5ff
+    **Chunking:**  MAX_PAYLOAD = 1200 bytes
+    exam_resp (~8KB) → ~7 chunks
+    chunk אחרון נושא  MSG_END flag (0x40)
+    recv() צובר chunks עד MSG_END → מחזיר הודעה שלמה
+
+    **Congestion Control (AIMD):**
+    Slow Start:       cwnd = 1  →  cwnd ×2 לכל RTT עד ssthresh = 32
+    AIMD:             cwnd += 1/cwnd לכל ACK חדש
+    Fast Retransmit:  3 dup ACKs → ssthresh = cwnd/2  cwnd = ssthresh
+    Timeout (500ms):  ssthresh = cwnd/2  cwnd = 1  Go-Back-N
+
+    **Flow Control:**
+    window field בכל פקט = free recv-buffer slots  (RECV_BUF_SIZE = 64)
+    effective_window = min(cwnd, peer_window, WINDOW_CAP=32)
+  end note
+end group
+
+' ══════════════════════════════════════════════════════════
+== 💾  שלב 6 — שמירה והגשה ==
+' ══════════════════════════════════════════════════════════
+
+cA -> br  : {"type":"answers_save", "answers": {...}}
+activate br
+br -> ex  : RUDP DATA [answers_save]
+activate ex
+ex -> vol : write answers/{exam_id}/{client_id}.json
+ex --> br : {"type":"answers_saved"}
+deactivate ex
+br --> cA : {"type":"answers_saved"}
+deactivate br
+
+cA -> br  : {"type":"submit_req"}
+activate br
+br -> ex  : RUDP DATA [submit_req]
+activate ex
+ex --> br : {"type":"submit_resp", "ok": true}
+deactivate ex
+br --> cA : {"type":"submit_resp", "ok": true}
+deactivate br
+
+note over cA, vol #f0fdf4
+  **SyncProofCard — הוכחת סנכרון (מוצגת בדפדפן):**
+
+  transit_ms        = bridge_forwarded_at_ms − server_sent_at_ms
+  sync_delta_ms     = sync_target_ms − bridge_forwarded_at_ms  ≈ 0ms  ✓
+  spread_ms         = |forwarded_A − forwarded_B|              < 10ms ✓
+  sync_hold_ms      = זמן שהגשר החזיק לפני שליחה לדפדפן
+end note
+
+@enduml

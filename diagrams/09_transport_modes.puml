@@ -1,0 +1,87 @@
+@startuml 09_transport_modes
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam sequenceArrowThickness 1.8
+skinparam participantBackgroundColor #f8fafc
+skinparam participantBorderColor #94a3b8
+skinparam participantBorderThickness 2
+skinparam participantFontColor #1e3a5f
+skinparam noteBackgroundColor #fefce8
+skinparam noteBorderColor #f59e0b
+
+title <size:18><color:#1d4ed8>**השוואת מצבי תחבורה**</color></size>\n<size:11><color:#64748b>RUDP+Sync  vs  TCP+Sync  vs  TCP+NoSync</color></size>
+
+actor "👤 דפדפן" as browser #dbeafe
+
+participant "nginx :80\n/ws → :8081\n/ws-tcp-sync → :8082\n/ws-tcp-nosync → :8083" as nginx #fffbeb
+
+participant "ws_bridge.py\n:8081\nRUDP+Sync" as br_rudp  #f0fdf4
+participant "ws_bridge_tcp.py\n:8082\nTCP+Sync"  as br_tcp_s #f0f9ff
+participant "ws_bridge_tcp.py\n:8083\nTCP+NoSync" as br_tcp_n #fff1f2
+
+participant "exam-server\n10.99.0.20-22\nRUDP :9000\nSYNC=1" as srv_rudp  #f0fdf4
+participant "exam_server_tcp\n10.99.0.23\nTCP :9001\nSYNC=1"  as srv_tcp_s #f0f9ff
+participant "exam_server_tcp\n10.99.0.24\nTCP :9001\nSYNC=0"  as srv_tcp_n #fff1f2
+
+== מצב 1: RUDP + Sync (ברירת מחדל) ==
+
+browser -> nginx    : GET /ws  Upgrade: websocket
+nginx   -> br_rudp  : proxy_pass :8081
+br_rudp -> srv_rudp : **RUDP/UDP** — sliding window\nheader 14B | CRC-16 | chunking | AIMD
+srv_rudp --> br_rudp : **ZS wire** + server_sent_at_ms\nExamSendCoordinator stagger
+br_rudp --> browser  : exam_resp\n+ sync proof (hold, target, transit)
+
+note right of br_rudp #f0fdf4
+  **✓ RUDP sliding window ARQ**
+  **✓ ExamSendCoordinator stagger**
+  **✓ Bridge self-correcting hold**
+  spread < 10ms בין כל הלקוחות
+end note
+
+== מצב 2: TCP + Sync ==
+
+browser -> nginx     : GET /ws-tcp-sync  Upgrade: websocket
+nginx   -> br_tcp_s  : proxy_pass :8082
+br_tcp_s -> srv_tcp_s : **TCP** — newline-delimited JSON\nwriter.write(json + b'\\n')
+srv_tcp_s --> br_tcp_s : JSON + server_sent_at_ms\nExamSendCoordinator stagger
+br_tcp_s --> browser  : exam_resp\n+ sync proof
+
+note right of br_tcp_s #f0f9ff
+  **✗ RUDP** (TCP handles reliability)
+  **✓ ExamSendCoordinator stagger**
+  **✓ Bridge hold**
+  שימוש ל-השוואה: TCP vs RUDP
+end note
+
+== מצב 3: TCP + NoSync (Baseline) ==
+
+browser -> nginx     : GET /ws-tcp-nosync  Upgrade: websocket
+nginx   -> br_tcp_n  : proxy_pass :8083
+br_tcp_n -> srv_tcp_n : **TCP** — newline-delimited JSON
+srv_tcp_n --> br_tcp_n : JSON — **ללא** server_sent_at_ms\nשליחה מיידית, אין stagger
+br_tcp_n --> browser  : exam_resp\n**⚠ אין sync proof**
+
+note right of br_tcp_n #fff1f2
+  **✗ RUDP**
+  **✗ ExamSendCoordinator**
+  **✗ Bridge hold**
+  Baseline — ללא סנכרון
+  SyncProofCard מציג: "⚠ Sync disabled"
+end note
+
+== בחירת מצב בדפדפן ==
+
+note over browser #f0f9ff
+  **ModeSelector (boot screen):**
+  ?mode=rudp-sync   → /ws
+  ?mode=tcp-sync    → /ws-tcp-sync
+  ?mode=tcp-nosync  → /ws-tcp-nosync
+
+  ניתן לפתוח שלושה טאבים במקביל להשוואה חיה
+end note
+
+@enduml

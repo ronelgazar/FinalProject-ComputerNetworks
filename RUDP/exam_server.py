@@ -14,7 +14,9 @@ import json
 import logging
 import os
 import pathlib
+import struct
 import time
+import zlib
 from typing import Any, Dict, Optional
 
 from rudp_socket import RudpServer, RudpSocket, RudpTimeout, RudpReset
@@ -41,7 +43,7 @@ _EXAM_START_AT_MS: Optional[int] = (
 #
 # Two complementary mechanisms work together:
 #
-# A) Server-side staggered sends (primary — friend's formula):
+# A) Server-side staggered sends (primary)
 #    For each client i, compute a conservative one-way delay estimate D_i:
 #      RTT_med_i = median of 3 RTT samples (min/med/max from 12 NTP rounds)
 #      J_rtt_i   = max - min  (jitter estimate from 3 samples)
@@ -62,7 +64,7 @@ _client_rtts: Dict[str, float] = {}             # client_id → RTT in ms (from 
 _client_rtt_samples: Dict[str, list] = {}        # client_id → [min, med, max] from NTP
 _client_offsets: Dict[str, float] = {}           # client_id → NTP clock offset (ms)
 _rtt_lock = asyncio.Lock()
-JITTER_BUFFER_MS = 30
+JITTER_BUFFER_MS = 5
 
 # Send overhead estimate per client (ms) and scheduling margin (ms)
 C_SEND_MS        = 1.0
@@ -96,7 +98,7 @@ def _compute_D(client_id: Optional[str]) -> float:
       J_rtt  = max(r1,r2,r3) - min(...)
       D_i    = d_down + J_rtt / 2   (asymmetric-corrected estimate)
 
-    Without offset data (friend's formula):
+    Without offset data (symmetric RTT estimate — assumes equal up/down path):
       RTT_med = median(r1, r2, r3)
       J_rtt   = max - min
       D_i     = (RTT_med + J_rtt) / 2
@@ -155,11 +157,28 @@ class ExamSendCoordinator:
         self._lock    = asyncio.Lock()
 
     def reset(self):
-        """Reset for a new exam session (called on schedule_req)."""
+        """Reset for a new exam session (called on schedule_req).
+        Skipped if a coordination round is actively running to prevent
+        a late schedule_req from disrupting in-flight exam delivery."""
+        if self._task is not None and not self._task.done():
+            log.warning("Coordinator reset skipped — coordination in progress")
+            return
         self._registry.clear()
         self._t_sends.clear()
         self._event.clear()
         self._task = None
+        # Clear the cached start time so a freshly injected start_at.txt
+        # (e.g. from the prof-dashboard simulation) is picked up correctly.
+        global _EXAM_START_AT_MS
+        _EXAM_START_AT_MS = None
+        # Clear stale RTT data from previous sessions.  Without this,
+        # _get_max_rtt_ms() returns the max over ALL historical clients,
+        # causing the bridge to hold for (stale_max_rtt/2 + buffer) ms
+        # instead of the current session's ~5 ms, inflating spread by
+        # hundreds of ms.
+        _client_rtts.clear()
+        _client_rtt_samples.clear()
+        _client_offsets.clear()
 
     async def register(self, client_id: str, D_i: float):
         """Register client's D_i and ensure coordinator task is running."""
@@ -177,10 +196,15 @@ class ExamSendCoordinator:
         """
         Wait COLLECTION_WINDOW_SEC for all exam_req to arrive, then compute:
 
-          T_arr     = now + max(D_i) + N*C + M
-          T_send[i] = T_arr - D_i     (higher D → earlier send)
+          T_arr     = start_at_ms  (pinned to shared exam start time)
+          T_send[i] = T_arr - D_i  (higher D → earlier send)
 
         Stagger Δ_k = max(0, T_send[k+1] - T_send[k] - C) between sends.
+
+        Anchoring T_arr to the shared start_at_ms (from /app/shared/start_at.txt)
+        ensures all 3 RUDP server instances converge to the exact same delivery
+        moment even when their COLLECTION_WINDOW_SEC fires at different wall-clock
+        times due to DNS round-robin distributing clients across servers.
         """
         await asyncio.sleep(COLLECTION_WINDOW_SEC)
 
@@ -194,7 +218,21 @@ class ExamSendCoordinator:
         now_ms  = time.time() * 1000
         max_D   = max(d for _, d in items)
         N       = len(items)
-        T_arr   = now_ms + max_D + N * C_SEND_MS + M_MARGIN_MS
+
+        # ── Anchor T_arr to shared start_at_ms ───────────────────────────────
+        # All 3 RUDP server instances share /app/shared/start_at.txt via the
+        # exam-shared Docker volume.  Pinning T_arr = start_at_ms (rather than
+        # now + max_D + ...) makes every server converge to the same delivery
+        # moment regardless of when each server's COLLECTION_WINDOW_SEC fires,
+        # eliminating the ~200-300 ms cross-server divergence seen under load.
+        start_at_ms = await _get_start_at_ms()
+        T_arr       = float(start_at_ms)
+        if T_arr < now_ms + max_D + M_MARGIN_MS:
+            # Fallback: start_at_ms too close or already past (e.g. prof-dashboard
+            # simulation with a very short offset).  Compute dynamically.
+            T_arr = now_ms + max_D + N * C_SEND_MS + M_MARGIN_MS
+            log.warning("T_arr: start_at_ms too close/past — dynamic fallback T_arr=+%.0f ms",
+                        T_arr - now_ms)
 
         # T_send[i] = T_arr - D_i  (slowest D first → smallest T_send → sent first)
         for cid, D in items:
@@ -344,9 +382,15 @@ async def _update_client(client_id: str, **fields):
         CLIENTS_FILE.write_text(json.dumps(data, indent=2))
 
 
-def _count_answered(answers: list) -> int:
+def _count_answered(answers) -> int:
+    # New flat format: {"q1": "a", "q2": "b", ...}
+    if isinstance(answers, dict):
+        return sum(1 for v in answers.values() if v)
+    # Legacy list format: [{"type": "mcq", "optionId": "a"}, ...]
     count = 0
     for a in answers:
+        if not isinstance(a, dict):
+            continue
         if a.get('type') == 'mcq' and a.get('optionId') is not None:
             count += 1
         elif a.get('type') == 'text' and str(a.get('text', '')).strip():
@@ -464,6 +508,20 @@ async def handle_connection(conn: RudpSocket):
                     log.info("exam_req: fresh RTT update for %s samples=%s offset=%s",
                              client_id, fresh_samples, fresh_offset)
 
+                # Load exam AND pre-encode it BEFORE the coordinator wait so that:
+                #  1. Disk I/O (~28 ms) happens during the 1.5s COLLECTION_WINDOW
+                #  2. json.dumps() on the 33KB exam dict (~27 ms) also happens
+                #     during the window — NOT after the stagger sleep.
+                # Without pre-encoding, each handler's json.dumps() blocks asyncio
+                # for ~27 ms AFTER T_send, staggering server_sent_at_ms by
+                # 27 ms × (N-1) and causing ~270 ms spread with 10 clients.
+                current_exam   = _load_exam()
+                exam_json_str  = json.dumps(current_exam)        # pre-encode  ~27 ms
+                exam_zl        = zlib.compress(                  # pre-compress ~5 ms
+                    exam_json_str.encode(), level=1)
+                # Both blocking operations now happen during the 1.5 s
+                # COLLECTION_WINDOW, not after the stagger sleep.
+
                 D = _compute_D(client_id)
                 await _coordinator.register(client_id or 'unknown', D)
                 t_send = await _coordinator.wait_t_send(client_id or 'unknown')
@@ -475,22 +533,37 @@ async def handle_connection(conn: RudpSocket):
                              client_id, D, wait_ms)
                     await asyncio.sleep(wait_ms / 1000.0)
 
-                current_exam = _load_exam()
-                delay        = _deliver_delay_ms(client_id)
-                await _send(conn, {
+                # Hot path — ZERO blocking work after the stagger sleep.
+                # server_sent_at_ms is stamped here; then only a tiny meta dict
+                # is JSON-encoded (<1 ms) and spliced with the already-compressed
+                # exam bytes.  No zlib.compress(), no json.dumps(large_dict).
+                #
+                # Wire format  "ZS" (ZLib Split):
+                #   b'ZS' | uint16-BE(len(meta_bytes)) | meta_bytes | exam_zl
+                # Bridge splits on the length prefix, decompresses exam_zl,
+                # merges into one JS object before forwarding to the browser.
+                delay      = _deliver_delay_ms(client_id)
+                meta       = {
                     "type":              "exam_resp",
                     "req_id":            req_id,
-                    "exam":              current_exam,
-                    # Primary: server already staggered the send time (D_i formula)
-                    # Secondary: bridge fine-tunes with self-correcting hold
+                    "server_sent_at_ms": int(time.time() * 1000),
                     "deliver_delay_ms":  delay,
                     "max_rtt_ms":        round(_get_max_rtt_ms(), 2),
                     "my_rtt_ms":         round(_client_rtts.get(client_id, 50.0) if client_id else 50.0, 2),
-                    # Proof fields
                     "D_i":               round(D, 2),
                     "T_send_planned_ms": round(t_send, 2),
                     "stagger_wait_ms":   round(max(0.0, wait_ms), 2),
-                })
+                }
+                meta_bytes = json.dumps(meta).encode()          # <200 bytes, <1 ms
+                data = b'ZS' + struct.pack('>H', len(meta_bytes)) + meta_bytes + exam_zl
+                t0   = time.monotonic()
+                try:
+                    await conn.send(data)
+                    elapsed = (time.monotonic() - t0) * 1000
+                    log.info("_send exam_resp to %s: meta=%dB exam_zl=%dB total=%dB, %.1f ms",
+                             conn._remote, len(meta_bytes), len(exam_zl), len(data), elapsed)
+                except Exception as e:
+                    log.warning("exam_resp send failed: %s", e)
                 if client_id:
                     # exam_opened_at = when the exam became visible to this client (≈ T₀)
                     await _update_client(client_id,
@@ -567,8 +640,14 @@ async def _send(conn: RudpSocket, obj: dict):
     # compensated because time.now() will have already advanced by that amount.
     obj['server_sent_at_ms'] = int(time.time() * 1000)
     data = json.dumps(obj).encode('utf-8')
+    pkt_type = obj.get('type', '?')
+    t0 = time.monotonic()
     try:
         await conn.send(data)
+        elapsed = (time.monotonic() - t0) * 1000
+        if elapsed > 5 or pkt_type == 'exam_resp':
+            log.info("_send %s to %s: %d bytes, %.1f ms",
+                     pkt_type, conn._remote, len(data), elapsed)
     except (RudpTimeout, RudpReset) as e:
         log.warning("Send failed: %s", e)
 

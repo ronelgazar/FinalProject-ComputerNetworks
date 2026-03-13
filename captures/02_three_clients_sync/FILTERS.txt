@@ -1,0 +1,11 @@
+# Wireshark filters for 02_three_clients_sync
+# Open: wireshark C:\Users\ronelgazar\Documents\University\year2\Semester1\Computer Networks\final\FinalProject-ComputerNetworks\captures\02_three_clients_sync\*.pcap
+
+#  RUDP traffic all servers
+#    udp.port == 9000
+#  Client-1 receive time
+#    ip.addr == (client-1 IP) && udp.port == 9000
+#  Staggered send on server
+#    rudp-server-*.pcap  [look at timestamps of large DATA bursts]
+#  Sync spread (compare times)
+#    udp.port == 9000  [merge all, sort by time]

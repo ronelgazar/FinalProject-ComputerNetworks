@@ -1,0 +1,71 @@
+@startuml 01_dhcp
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundcorner 10
+skinparam sequenceArrowThickness 1.8
+skinparam sequenceArrowColor #2563eb
+skinparam participantBackgroundColor #f0f4ff
+skinparam participantBorderColor #93c5fd
+skinparam participantBorderThickness 2
+skinparam participantFontColor #1e3a5f
+skinparam noteBackgroundColor #fefce8
+skinparam noteBorderColor #f59e0b
+
+autonumber "<b>( 0 )</b>"
+
+title <size:18><color:#1d4ed8>**DHCP — רכישת כתובת IP**</color></size>\n<size:11><color:#64748b>DISCOVER → OFFER → REQUEST → ACK  |  RFC 2131</color></size>
+
+actor       "👤 client-N\n(entrypoint.sh)" as client #dbeafe
+participant "🏠 dhcp-server\n10.99.0.3 UDP:67" as dhcp   #f0fdf4
+
+== שלב 1 — גילוי ==
+
+client ->  dhcp  : **DHCPDISCOVER**\nsrc: 0.0.0.0:68  dst: 255.255.255.255:67\nop=BOOTREQUEST  chaddr=<MAC>\nclient-id, DHCP Message Type=1
+
+note right of client
+  הלקוח טרם קיבל IP
+  שולח broadcast לכל הרשת
+end note
+
+== שלב 2 — הצעה ==
+
+dhcp  --> client : **DHCPOFFER**\nyiaddr: 10.99.0.1xx  siaddr: 10.99.0.3\nSubnet Mask: 255.255.255.0\nRouter: 10.99.0.1\nDNS Server: 10.99.0.2\nLease Time: 100s
+
+note right of dhcp
+  השרת בוחר IP פנוי מהpool:
+  10.99.0.100 – 10.99.0.149
+  ושומר הזמנה זמנית
+end note
+
+== שלב 3 — בקשה ==
+
+client ->  dhcp  : **DHCPREQUEST**\nsrc: 0.0.0.0:68  dst: 255.255.255.255:67\nRequested IP: 10.99.0.1xx\nServer ID: 10.99.0.3
+
+note right of client
+  broadcast — מאשר לשאר השרתים
+  שהצעה אחת נבחרה
+end note
+
+== שלב 4 — אישור ==
+
+dhcp  --> client : **DHCPACK ✓**\nyiaddr: 10.99.0.1xx\nכל פרמטרי הרשת + Lease Time
+
+note right of dhcp
+  כותב ל-leases.json:
+  { "10.99.0.1xx": { "mac": ...,
+    "expires": now+100 } }
+end note
+
+== הגדרת ממשק ==
+
+client -> client : **ip addr add** 10.99.0.1xx/24 dev eth0\n**ip route add** default via 10.99.0.1\n**echo** "nameserver 10.99.0.2" > /etc/resolv.conf
+
+note over client #f0fdf4
+  הלקוח מוכן לתקשורת ברשת
+  supervisord מפעיל nginx + ws_bridge
+end note
+
+@enduml

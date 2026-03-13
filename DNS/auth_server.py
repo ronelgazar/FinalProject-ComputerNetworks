@@ -52,6 +52,12 @@ _ZONE: dict = {
         (TYPE_A, rdata_a('10.99.0.21')),
         (TYPE_A, rdata_a('10.99.0.22')),
     ],
+    # Individual server names — each client container uses its own server
+    'server1': [(TYPE_A, rdata_a('10.99.0.20'))],
+    'server2': [(TYPE_A, rdata_a('10.99.0.21'))],
+    'server3': [(TYPE_A, rdata_a('10.99.0.22'))],
+    'tcp-sync':   [(TYPE_A, rdata_a('10.99.0.23'))],
+    'tcp-nosync': [(TYPE_A, rdata_a('10.99.0.24'))],
 }
 
 # Reverse PTR map: last-octet → fqdn
@@ -63,6 +69,8 @@ _PTR_MAP = {
     '20':  'server.exam.lan',
     '21':  'server.exam.lan',
     '22':  'server.exam.lan',
+    '23':  'tcp-sync.exam.lan',
+    '24':  'tcp-nosync.exam.lan',
 }
 
 

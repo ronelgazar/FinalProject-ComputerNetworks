@@ -1,0 +1,13 @@
+# Wireshark filters for 06_tcp_sync
+# Open: wireshark C:\Users\ronelgazar\Documents\University\year2\Semester1\Computer Networks\final\FinalProject-ComputerNetworks\captures\06_tcp_sync\*.pcap
+
+#  TCP NL-JSON stream
+#    tcp.port == 9001
+#  server_sent_at_ms in payload
+#    tcp.port == 9001  [follow TCP stream, grep server_sent_at_ms]
+#  Bridge hold in payload
+#    tcp.port == 9001  [grep sync_hold_ms in client-1/2.pcap]
+#  Spread vs TCP no-sync (05)
+#    compare bridge_forwarded_at_ms: scenario 05 vs 06
+#  Spread vs RUDP sync (02)
+#    compare bridge_forwarded_at_ms: scenario 02 vs 06

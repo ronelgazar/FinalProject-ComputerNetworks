@@ -1,0 +1,9 @@
+# Wireshark filters for 04_disconnect
+# Open: wireshark C:\Users\ronelgazar\Documents\University\year2\Semester1\Computer Networks\final\FinalProject-ComputerNetworks\captures\04_disconnect\*.pcap
+
+#  RUDP FIN / teardown (client-1)
+#    udp.port == 9000 && (udp[14] & 0x04 != 0)
+#  Normal completion (client-2)
+#    udp.port == 9000  [client-2.pcap]
+#  All RUDP traffic
+#    udp.port == 9000

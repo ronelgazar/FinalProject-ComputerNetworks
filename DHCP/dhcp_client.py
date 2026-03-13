@@ -2,8 +2,8 @@ import os, socket, random
 from scapy.all import BOOTP, DHCP
 
 DHCP_SERVER_IP = os.environ.get("DHCP_SERVER_IP", "10.99.0.3")
-SERVER_PORT = 1067
-CLIENT_PORT = 1068
+SERVER_PORT = 67
+CLIENT_PORT = 68
 
 
 def read_mac() -> str:
