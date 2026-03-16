@@ -1,0 +1,27 @@
+{
+  "name": "Exam Network",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/python:1": { "version": "3.11" },
+    "ghcr.io/devcontainers/features/node:1": { "version": "20" }
+  },
+  "forwardPorts": [8081, 8082, 8083, 9999, 7777],
+  "portsAttributes": {
+    "8081": { "label": "Client 1 (RUDP-sync)", "onAutoForward": "notify" },
+    "8082": { "label": "Client 2 (TCP-sync)", "onAutoForward": "notify" },
+    "8083": { "label": "Client 3 (TCP-nosync)", "onAutoForward": "notify" },
+    "9999": { "label": "Admin Panel", "onAutoForward": "notify" },
+    "7777": { "label": "Prof Dashboard", "onAutoForward": "notify" }
+  },
+  "postCreateCommand": "pip install flask requests python-docx && npm install --prefix app/frontend",
+  "postStartCommand": ".devcontainer/start.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  }
+}

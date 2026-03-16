@@ -8,7 +8,8 @@
       "Bash(pip install:*)",
       "Bash(docker compose:*)",
       "Bash(docker ps:*)",
-      "Bash(docker exec:*)"
+      "Bash(docker exec:*)",
+      "Bash(chmod +x \"c:/Users/ronelgazar/Documents/University/year2/Semester1/Computer Networks/final/FinalProject-ComputerNetworks/.devcontainer/start.sh\")"
     ]
   }
 }
