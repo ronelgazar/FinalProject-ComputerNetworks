@@ -14,8 +14,8 @@
     "9999": { "label": "Admin Panel", "onAutoForward": "notify" },
     "7777": { "label": "Prof Dashboard", "onAutoForward": "notify" }
   },
-  "postCreateCommand": "pip install flask requests python-docx && npm install --prefix app/frontend",
-  "postStartCommand": ".devcontainer/start.sh",
+  "onCreateCommand": "bash .devcontainer/setup.sh",
+  "postStartCommand": "bash .devcontainer/start.sh",
   "customizations": {
     "vscode": {
       "extensions": [
