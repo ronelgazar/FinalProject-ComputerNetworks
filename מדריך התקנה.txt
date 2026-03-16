@@ -1,0 +1,233 @@
+================================================================================
+          מדריך התקנה - פרויקט גמר רשתות מחשבים
+          Exam Network Simulation
+================================================================================
+
+הפרויקט מריץ סימולציה של רשת בחינות עם DNS, DHCP, RUDP ו-TCP
+בתוך סביבת Docker עם 12+ קונטיינרים.
+
+יש שתי דרכים להריץ את הפרויקט:
+  א. GitHub Codespaces (מומלץ - בלי להתקין כלום)
+  ב. התקנה מקומית
+
+
+========================================
+ א. הרצה דרך GitHub Codespaces
+========================================
+
+מה זה Codespaces?
+  מחשב וירטואלי בענן של GitHub שנפתח בלחיצה אחת בדפדפן.
+  לא צריך להתקין שום דבר. חינם - 60 שעות בחודש.
+
+שלבים:
+------
+
+1. נכנסים לריפו בגיטהאב:
+   https://github.com/<USERNAME>/FinalProject-ComputerNetworks
+
+2. לוחצים על הכפתור הירוק "Code"
+
+3. עוברים ללשונית "Codespaces"
+
+4. לוחצים "Create codespace on main"
+
+5. מחכים 3-5 דקות. נפתח עורך VS Code בדפדפן.
+   הטרמינל בתחתית המסך בונה אוטומטית את כל הקונטיינרים.
+
+6. כשהטרמינל מסיים ומציג "Exam Network is running",
+   לוחצים על לשונית PORTS בתחתית המסך.
+
+7. רואים את הפורטים הבאים:
+
+   פורט    שירות                    מה זה
+   ----    ------                    ------
+   8081    Client 1 (RUDP-sync)      לקוח בחינה - מצב RUDP מסונכרן
+   8082    Client 2 (TCP-sync)       לקוח בחינה - מצב TCP מסונכרן
+   8083    Client 3 (TCP-nosync)     לקוח בחינה - מצב TCP לא מסונכרן
+   9999    Admin Panel               פאנל ניהול - צפייה בתשובות ומצב המערכת
+   7777    Prof Dashboard            לוח בקרה למרצה - שליטה על הבחינה
+
+8. לוחצים על אייקון הגלובוס ליד כל פורט כדי לפתוח בדפדפן.
+
+9. כדי לשתף קישור (למשל עם המרצה):
+   קליק ימני על הפורט -> Port Visibility -> Public
+   מעתיקים את הכתובת ושולחים.
+
+פקודות שימושיות בטרמינל של Codespaces:
+   docker compose ps                    # סטטוס כל הקונטיינרים
+   docker compose logs -f client-1      # לוגים של לקוח 1
+   docker compose down                  # עצירת הכל
+   docker compose up --build -d         # הפעלה מחדש
+
+חשוב לדעת:
+  - 60 שעות חינם בחודש
+  - נכבה אוטומטית אחרי 30 דקות ללא פעילות (חוסך שעות)
+  - הנתונים נשמרים בין הפעלות - פשוט פותחים מחדש את ה-Codespace
+
+
+========================================
+ ב. התקנה מקומית
+========================================
+
+--- אפשרות מהירה: סקריפט אוטומטי ---
+
+  הפרויקט כולל סקריפט שמתקין הכל אוטומטית:
+  Docker, Python, Node.js, Git, וכל התלויות.
+
+  python install.py
+
+  הסקריפט מזהה את מערכת ההפעלה (Windows/Mac/Linux)
+  ומתקין את כל מה שחסר. בסיום הוא בודק ש-28 קבצים
+  קריטיים קיימים ומריץ docker compose up --build.
+
+  אם הסקריפט הצליח - אפשר לדלג ישר לשלב 7 (גישה לשירותים).
+
+--- אפשרות ידנית: שלב אחרי שלב ---
+
+דרישות מקדימות:
+  - Docker Desktop (עם Docker Compose)
+  - Python 3.10+
+  - Node.js 18+ (לפיתוח הפרונטאנד)
+  - Git
+
+שלב 1: התקנת Docker
+--------------------
+
+Windows:
+  winget install Docker.DockerDesktop
+  (או להוריד מ https://docker.com/products/docker-desktop)
+  * אחרי ההתקנה - לפתוח את Docker Desktop ולוודא שהוא רץ
+
+Mac:
+  brew install --cask docker
+  (או להוריד מ https://docker.com/products/docker-desktop)
+
+Linux (Ubuntu/Debian):
+  curl -fsSL https://get.docker.com | sudo sh
+  sudo usermod -aG docker $USER
+  newgrp docker
+
+שלב 2: התקנת Python ו-Node
+----------------------------
+
+Windows:
+  winget install Python.Python.3.11
+  winget install OpenJS.NodeJS.LTS
+
+Mac:
+  brew install python@3.11 node
+
+Linux:
+  sudo apt install python3 python3-pip nodejs npm
+
+שלב 3: שכפול הפרויקט
+---------------------
+
+  git clone https://github.com/<USERNAME>/FinalProject-ComputerNetworks.git
+  cd FinalProject-ComputerNetworks
+
+שלב 4: התקנת תלויות Python
+---------------------------
+
+  pip install flask requests python-docx
+
+שלב 5: בנייה והפעלה
+--------------------
+
+  docker compose up --build -d
+
+  ההפעלה הראשונה לוקחת 5-10 דקות (בנייה של כל האימג'ים).
+  הפעלות הבאות יהיו מהירות יותר.
+
+שלב 6: בדיקה שהכל רץ
+---------------------
+
+  docker compose ps
+
+  צריך לראות כ-12 קונטיינרים במצב "running":
+  - dhcp-server
+  - dns-root, dns-tld, dns-auth, dns-resolver
+  - rudp-server-1, rudp-server-2, rudp-server-3
+  - tcp-server-sync, tcp-server-nosync
+  - admin
+  - client-1, client-2, client-3
+
+שלב 7: גישה לשירותים
+--------------------
+
+  פותחים בדפדפן:
+
+  http://localhost:8081    לקוח 1 (RUDP-sync)
+  http://localhost:8082    לקוח 2 (TCP-sync)
+  http://localhost:8083    לקוח 3 (TCP-nosync)
+  http://localhost:9999    פאנל ניהול
+
+שלב 8 (אופציונלי): לוח בקרה למרצה
+-----------------------------------
+
+  python prof_dashboard.py
+
+  פותחים: http://localhost:7777
+
+
+========================================
+ פקודות שימושיות
+========================================
+
+הפעלה עם לכידת מנות (Wireshark):
+  docker compose --profile capture up --build -d
+  (קבצי pcap נשמרים בתיקיית captures/)
+
+עצירה:
+  docker compose down
+
+צפייה בלוגים:
+  docker compose logs -f               # כל הקונטיינרים
+  docker compose logs -f rudp-server-1  # קונטיינר ספציפי
+
+מחיקה מלאה (כולל volumes):
+  docker compose down -v
+
+בנייה מחדש (אחרי שינוי קוד):
+  docker compose up --build -d
+
+
+========================================
+ פתרון בעיות
+========================================
+
+בעיה: Docker לא מותקן / לא רץ
+  -> לוודא ש-Docker Desktop פתוח (Windows/Mac)
+  -> Linux: sudo systemctl start docker
+
+בעיה: פורט תפוס
+  -> לבדוק: docker compose ps
+  -> לעצור שירות ישן: docker compose down
+
+בעיה: קונטיינר נכשל
+  -> לבדוק לוגים: docker compose logs <container-name>
+  -> לבנות מחדש: docker compose up --build -d <service-name>
+
+בעיה: DNS לא עובד בתוך הקונטיינרים
+  -> לוודא ש-dns-resolver רץ: docker compose logs dns-resolver
+  -> לבדוק: docker exec client-1 nslookup server1.exam.lan 10.99.0.2
+
+
+========================================
+ מבנה הפרויקט
+========================================
+
+  FinalProject-ComputerNetworks/
+  |-- DNS/                 שרתי DNS (root, tld, auth, resolver)
+  |-- RUDP/                פרוטוקול RUDP + שרת בחינות
+  |-- TCP/                 שרת בחינות TCP + גשר WebSocket
+  |-- DHCP/                שרת DHCP + Dockerfile ללקוחות
+  |-- admin/               פאנל ניהול (FastAPI)
+  |-- app/frontend/        ממשק משתמש React (TypeScript/Vite)
+  |-- capture/             כלי לכידת מנות
+  |-- prof_dashboard.py    לוח בקרה למרצה
+  |-- docker-compose.yml   הגדרת כל הקונטיינרים
+  |-- install.py           סקריפט התקנה אוטומטי
+
+
+================================================================================
