@@ -1,0 +1,18 @@
+@startuml RUDP Header
+skinparam defaultFontName Consolas
+skinparam defaultFontSize 13
+skinparam shadowing false
+
+title **RUDP Packet Header — 14 Bytes**
+
+map "RUDP Header" as HDR {
+  **seq**      (4B) => מספר רצף לזיהוי סדר ושידור חוזר
+  **ack**      (4B) => אישור מצטבר — כל החבילות עד מספר זה התקבלו
+  **flags**    (1B) => דגלי בקרה: SYN | ACK | FIN | DATA | RST | PING | MSG_END
+  **window**   (1B) => מספר חבילות שהמקבל מוכן לקלוט
+  **len**      (2B) => אורך ה-payload בבייטים
+  **checksum** (2B) => CRC-16 על header + payload, חבילה נפסלת אם לא תואם
+  **payload**  (var) => נתוני JSON של הבחינה
+}
+
+@enduml

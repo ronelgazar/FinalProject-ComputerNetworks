@@ -20,7 +20,7 @@ import socket
 import struct
 import time
 from typing import Dict, List, Optional, Tuple
-
+from dns_packet import RCODE_SERVFAIL as _SF
 from dns_packet import (
     DnsHeader, DnsQuestion, DnsRR,
     TYPE_A, TYPE_NS, TYPE_CNAME, CLASS_IN,
@@ -114,7 +114,7 @@ def _cache_get(name: str, qtype: int) -> Optional[List[DnsRR]]:
     return rrs
 
 
-def _cache_put(name: str, qtype: int, rrs: List[DnsRR]):
+def _cache_put(name, qtype, rrs):
     if not rrs:
         return
     min_ttl = min(r.ttl for r in rrs)
@@ -345,8 +345,7 @@ class _RcodeException(Exception):
         self.rcode = rcode
 
 
-# Patch process to handle arbitrary rcodes
-from dns_packet import RCODE_SERVFAIL as _SF
+
 
 _orig_process = DnsServer._process
 
