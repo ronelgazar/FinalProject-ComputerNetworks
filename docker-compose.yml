@@ -25,6 +25,7 @@ services:
     container_name: dhcp-server
     environment:
       - SERVER_IP=10.99.0.3
+      - PYTHONUNBUFFERED=1
     networks:
       exam-net:
         ipv4_address: 10.99.0.3

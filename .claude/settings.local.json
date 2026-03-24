@@ -9,7 +9,8 @@
       "Bash(docker compose:*)",
       "Bash(docker ps:*)",
       "Bash(docker exec:*)",
-      "Bash(chmod +x \"c:/Users/ronelgazar/Documents/University/year2/Semester1/Computer Networks/final/FinalProject-ComputerNetworks/.devcontainer/start.sh\")"
+      "Bash(chmod +x \"c:/Users/ronelgazar/Documents/University/year2/Semester1/Computer Networks/final/FinalProject-ComputerNetworks/.devcontainer/start.sh\")",
+      "Bash(/c/Python312/python -m pip install python-pptx requests)"
     ]
   }
 }

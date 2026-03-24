@@ -1,4 +1,4 @@
-import os, socket, random
+import os, socket, struct
 from scapy.all import BOOTP, DHCP
 
 DHCP_SERVER_IP = os.environ.get("DHCP_SERVER_IP", "10.99.0.3")
@@ -18,6 +18,19 @@ def mac_to_bytes(mac: str) -> bytes:
     parts = mac.split(":")
     b = bytes(int(x, 16) for x in parts)
     return b.ljust(16, b"\x00")
+
+
+def xid_from_mac(mac: str) -> int:
+    """Derive a deterministic XID from the container's MAC address.
+    Docker MACs on the same subnet share the first 4 bytes (02:42:0a:63:...),
+    so we use bytes [2:6] — the last 4 bytes — which encode the container's
+    IP address and are unique per container.
+      e.g. 02:42:0a:63:00:64 -> 0a:63:00:64 -> XID=0x0a630064
+           02:42:0a:63:00:65 -> 0a:63:00:65 -> XID=0x0a630065
+    """
+    parts = mac.split(":")
+    b = bytes(int(x, 16) for x in parts[2:6])
+    return struct.unpack("!I", b)[0]
 
 
 def get_opt(options, key):
@@ -43,7 +56,8 @@ def normalize_msg_type(v):
 def main():
     mac_str = read_mac()
     mac_bytes = mac_to_bytes(mac_str)
-    xid = random.randint(1, 0xFFFFFFFF)
+    xid = xid_from_mac(mac_str)
+    print(f"[DHCP client] mac={mac_str} xid=0x{xid:08x}", flush=True, file=__import__('sys').stderr)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

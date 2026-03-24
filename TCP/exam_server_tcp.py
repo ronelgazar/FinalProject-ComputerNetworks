@@ -82,7 +82,7 @@ def _compute_D(client_id: Optional[str]) -> float:
             D = max(1.0, d_down + j_rtt / 2.0)
             return D
         return (rtt_med + j_rtt) / 2.0
-    rtt = _client_rtts.get(client_id, 100.0)
+    rtt = _client_rtts.get(client_id, 100.0) #only one sample only gets to this if the client_id is known but no samples, which shouldn't happen often
     return rtt / 2.0
 
 
