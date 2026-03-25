@@ -1,0 +1,5027 @@
+[
+  {
+    "scenario": "baseline",
+    "mode": "tcp-nosync",
+    "run_index": 0,
+    "delays": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 42769.031,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": 11.121663411458334,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 42769.031,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": 11.219563802083334,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 42769.031,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": 11.002400716145834,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "baseline",
+    "mode": "tcp-nosync",
+    "run_index": 1,
+    "delays": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 42775.062,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -3.508544921875,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 42775.062,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -3.5485026041666665,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 42775.062,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -3.7895914713541665,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "baseline",
+    "mode": "tcp-nosync",
+    "run_index": 2,
+    "delays": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 42781.046,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -20.513427734375,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 42781.046,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -20.7548828125,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 42781.046,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -20.39501953125,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "baseline",
+    "mode": "tcp-nosync",
+    "run_index": 3,
+    "delays": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 42787.109,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": 15.212931315104166,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 42787.109,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": 15.212931315104166,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 42787.109,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": 15.367228190104166,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "baseline",
+    "mode": "tcp-nosync",
+    "run_index": 4,
+    "delays": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 42793.14,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": 20.942667643229168,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 42793.14,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": 20.578165690104168,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 42793.14,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": 20.407430013020832,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "baseline",
+    "mode": "tcp-sync",
+    "run_index": 0,
+    "delays": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 42820.218,
+        "server_sent_at_ms": 1774462430041.0,
+        "bridge_forwarded_at_ms": 1774462430069.0,
+        "D_i": 1.0,
+        "stagger_wait_ms": 17.61,
+        "sync_hold_ms": 26.74,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 1.99,
+        "ntp_offset_ms": 10.075276692708334,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 42820.218,
+        "server_sent_at_ms": 1774462430042.0,
+        "bridge_forwarded_at_ms": 1774462430070.0,
+        "D_i": 1.0,
+        "stagger_wait_ms": 17.65,
+        "sync_hold_ms": 27.45,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 1.99,
+        "ntp_offset_ms": 10.09228515625,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 42820.218,
+        "server_sent_at_ms": 1774462430043.0,
+        "bridge_forwarded_at_ms": 1774462430071.0,
+        "D_i": 1.0,
+        "stagger_wait_ms": 17.7,
+        "sync_hold_ms": 27.01,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 1.99,
+        "ntp_offset_ms": 10.201619466145834,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "baseline",
+    "mode": "tcp-sync",
+    "run_index": 1,
+    "delays": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 42847.296,
+        "server_sent_at_ms": 1774462457122.0,
+        "bridge_forwarded_at_ms": 1774462457151.0,
+        "D_i": 1.0,
+        "stagger_wait_ms": 17.8,
+        "sync_hold_ms": 27.04,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 1.13,
+        "ntp_offset_ms": 17.709431966145832,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 42847.296,
+        "server_sent_at_ms": 1774462457121.0,
+        "bridge_forwarded_at_ms": 1774462457149.0,
+        "D_i": 1.0,
+        "stagger_wait_ms": 17.75,
+        "sync_hold_ms": 26.78,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 1.46,
+        "ntp_offset_ms": 17.5430908203125,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 42847.296,
+        "server_sent_at_ms": 1774462457122.0,
+        "bridge_forwarded_at_ms": 1774462457151.0,
+        "D_i": 1.0,
+        "stagger_wait_ms": 17.77,
+        "sync_hold_ms": 27.27,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 1.36,
+        "ntp_offset_ms": 17.693562825520832,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "baseline",
+    "mode": "tcp-sync",
+    "run_index": 2,
+    "delays": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 42874.375,
+        "server_sent_at_ms": 1774462484185.0,
+        "bridge_forwarded_at_ms": 1774462484213.0,
+        "D_i": 1.0,
+        "stagger_wait_ms": 17.72,
+        "sync_hold_ms": 27.5,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 2.0,
+        "ntp_offset_ms": 19.669270833333332,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 42874.375,
+        "server_sent_at_ms": 1774462484184.0,
+        "bridge_forwarded_at_ms": 1774462484213.0,
+        "D_i": 1.0,
+        "stagger_wait_ms": 17.68,
+        "sync_hold_ms": 27.12,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 2.0,
+        "ntp_offset_ms": 19.75537109375,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 42874.375,
+        "server_sent_at_ms": 1774462484185.0,
+        "bridge_forwarded_at_ms": 1774462484214.0,
+        "D_i": 1.0,
+        "stagger_wait_ms": 17.77,
+        "sync_hold_ms": 27.25,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 2.0,
+        "ntp_offset_ms": 19.825968424479168,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "baseline",
+    "mode": "tcp-sync",
+    "run_index": 3,
+    "delays": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 42901.453,
+        "server_sent_at_ms": 1774462511236.0,
+        "bridge_forwarded_at_ms": 1774462511264.0,
+        "D_i": 1.0,
+        "stagger_wait_ms": 17.66,
+        "sync_hold_ms": 26.7,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 1.64,
+        "ntp_offset_ms": 20.4051513671875,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 42901.453,
+        "server_sent_at_ms": 1774462511238.0,
+        "bridge_forwarded_at_ms": 1774462511266.0,
+        "D_i": 1.0,
+        "stagger_wait_ms": 17.76,
+        "sync_hold_ms": 26.61,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 1.97,
+        "ntp_offset_ms": 20.46044921875,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 42901.453,
+        "server_sent_at_ms": 1774462511237.0,
+        "bridge_forwarded_at_ms": 1774462511266.0,
+        "D_i": 1.0,
+        "stagger_wait_ms": 17.7,
+        "sync_hold_ms": 27.33,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 1.64,
+        "ntp_offset_ms": 20.51123046875,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "baseline",
+    "mode": "tcp-sync",
+    "run_index": 4,
+    "delays": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 42928.531,
+        "server_sent_at_ms": 1774462538321.0,
+        "bridge_forwarded_at_ms": 1774462538349.0,
+        "D_i": 1.0,
+        "stagger_wait_ms": 17.69,
+        "sync_hold_ms": 26.94,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 2.0,
+        "ntp_offset_ms": 17.089558919270832,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 42928.531,
+        "server_sent_at_ms": 1774462538319.0,
+        "bridge_forwarded_at_ms": 1774462538347.0,
+        "D_i": 1.0,
+        "stagger_wait_ms": 17.73,
+        "sync_hold_ms": 26.98,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 2.0,
+        "ntp_offset_ms": 16.831705729166668,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 42928.531,
+        "server_sent_at_ms": 1774462538320.0,
+        "bridge_forwarded_at_ms": 1774462538348.0,
+        "D_i": 1.0,
+        "stagger_wait_ms": 17.78,
+        "sync_hold_ms": 27.52,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 2.0,
+        "ntp_offset_ms": 16.881103515625,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "baseline",
+    "mode": "rudp-sync",
+    "run_index": 0,
+    "delays": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 14.999999999417923,
+    "dispersion_ms": 8.660254037508324,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 42955.578,
+        "server_sent_at_ms": 1774462565401.0,
+        "bridge_forwarded_at_ms": 1774462565408.0,
+        "D_i": 326.15,
+        "stagger_wait_ms": 15.78,
+        "sync_hold_ms": 4.04,
+        "max_rtt_ms": 3.0,
+        "my_rtt_ms": 3.0,
+        "ntp_offset_ms": 176.4976806640625,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 42955.578,
+        "server_sent_at_ms": 1774462565401.0,
+        "bridge_forwarded_at_ms": 1774462565408.0,
+        "D_i": 326.73,
+        "stagger_wait_ms": 15.83,
+        "sync_hold_ms": 4.18,
+        "max_rtt_ms": 3.0,
+        "my_rtt_ms": 3.0,
+        "ntp_offset_ms": 176.718505859375,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 42955.593,
+        "server_sent_at_ms": 1774462565401.0,
+        "bridge_forwarded_at_ms": 1774462565408.0,
+        "D_i": 326.31,
+        "stagger_wait_ms": 15.83,
+        "sync_hold_ms": 4.03,
+        "max_rtt_ms": 3.0,
+        "my_rtt_ms": 3.0,
+        "ntp_offset_ms": 176.32368977864584,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "baseline",
+    "mode": "rudp-sync",
+    "run_index": 1,
+    "delays": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 42982.64,
+        "server_sent_at_ms": 1774462592465.0,
+        "bridge_forwarded_at_ms": 1774462592471.0,
+        "D_i": 348.2,
+        "stagger_wait_ms": 15.83,
+        "sync_hold_ms": 3.73,
+        "max_rtt_ms": 2.49,
+        "my_rtt_ms": 2.49,
+        "ntp_offset_ms": 157.586181640625,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 42982.64,
+        "server_sent_at_ms": 1774462592465.0,
+        "bridge_forwarded_at_ms": 1774462592472.0,
+        "D_i": 347.86,
+        "stagger_wait_ms": 15.84,
+        "sync_hold_ms": 3.54,
+        "max_rtt_ms": 2.49,
+        "my_rtt_ms": 2.49,
+        "ntp_offset_ms": 157.4183349609375,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 42982.64,
+        "server_sent_at_ms": 1774462592466.0,
+        "bridge_forwarded_at_ms": 1774462592473.0,
+        "D_i": 347.15,
+        "stagger_wait_ms": 15.86,
+        "sync_hold_ms": 3.32,
+        "max_rtt_ms": 2.49,
+        "my_rtt_ms": 2.49,
+        "ntp_offset_ms": 157.55973307291666,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "baseline",
+    "mode": "rudp-sync",
+    "run_index": 2,
+    "delays": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43009.687,
+        "server_sent_at_ms": 1774462619523.0,
+        "bridge_forwarded_at_ms": 1774462619530.0,
+        "D_i": 355.35,
+        "stagger_wait_ms": 15.82,
+        "sync_hold_ms": 3.51,
+        "max_rtt_ms": 2.51,
+        "my_rtt_ms": 2.51,
+        "ntp_offset_ms": 151.98917643229166,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43009.687,
+        "server_sent_at_ms": 1774462619524.0,
+        "bridge_forwarded_at_ms": 1774462619531.0,
+        "D_i": 353.84,
+        "stagger_wait_ms": 15.82,
+        "sync_hold_ms": 3.63,
+        "max_rtt_ms": 2.51,
+        "my_rtt_ms": 2.51,
+        "ntp_offset_ms": 150.7271728515625,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43009.687,
+        "server_sent_at_ms": 1774462619524.0,
+        "bridge_forwarded_at_ms": 1774462619531.0,
+        "D_i": 353.85,
+        "stagger_wait_ms": 15.81,
+        "sync_hold_ms": 3.21,
+        "max_rtt_ms": 2.51,
+        "my_rtt_ms": 2.51,
+        "ntp_offset_ms": 150.97627766927084,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "baseline",
+    "mode": "rudp-sync",
+    "run_index": 3,
+    "delays": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43036.718,
+        "server_sent_at_ms": 1774462646566.0,
+        "bridge_forwarded_at_ms": 1774462646573.0,
+        "D_i": 343.68,
+        "stagger_wait_ms": 15.81,
+        "sync_hold_ms": 3.16,
+        "max_rtt_ms": 2.22,
+        "my_rtt_ms": 2.22,
+        "ntp_offset_ms": 160.76041666666666,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43036.718,
+        "server_sent_at_ms": 1774462646566.0,
+        "bridge_forwarded_at_ms": 1774462646572.0,
+        "D_i": 344.05,
+        "stagger_wait_ms": 15.81,
+        "sync_hold_ms": 3.01,
+        "max_rtt_ms": 2.22,
+        "my_rtt_ms": 2.22,
+        "ntp_offset_ms": 160.91861979166666,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43036.718,
+        "server_sent_at_ms": 1774462646566.0,
+        "bridge_forwarded_at_ms": 1774462646572.0,
+        "D_i": 344.73,
+        "stagger_wait_ms": 15.81,
+        "sync_hold_ms": 3.65,
+        "max_rtt_ms": 2.22,
+        "my_rtt_ms": 2.22,
+        "ntp_offset_ms": 160.84598795572916,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "baseline",
+    "mode": "rudp-sync",
+    "run_index": 4,
+    "delays": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43063.781,
+        "server_sent_at_ms": 1774462673621.0,
+        "bridge_forwarded_at_ms": 1774462673628.0,
+        "D_i": 337.8,
+        "stagger_wait_ms": 15.8,
+        "sync_hold_ms": 3.78,
+        "max_rtt_ms": 3.01,
+        "my_rtt_ms": 3.01,
+        "ntp_offset_ms": 166.65983072916666,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43063.781,
+        "server_sent_at_ms": 1774462673622.0,
+        "bridge_forwarded_at_ms": 1774462673629.0,
+        "D_i": 337.44,
+        "stagger_wait_ms": 15.73,
+        "sync_hold_ms": 3.8,
+        "max_rtt_ms": 3.01,
+        "my_rtt_ms": 3.01,
+        "ntp_offset_ms": 166.9427490234375,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43063.781,
+        "server_sent_at_ms": 1774462673622.0,
+        "bridge_forwarded_at_ms": 1774462673629.0,
+        "D_i": 337.81,
+        "stagger_wait_ms": 15.75,
+        "sync_hold_ms": 3.75,
+        "max_rtt_ms": 3.01,
+        "my_rtt_ms": 3.01,
+        "ntp_offset_ms": 166.90763346354166,
+        "simulated_delay_ms": 0.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "uniform_30ms",
+    "mode": "tcp-nosync",
+    "run_index": 0,
+    "delays": [
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43071.187,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -16.129923502604168,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43071.187,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -15.735107421875,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43071.187,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -15.485758463541666,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "uniform_30ms",
+    "mode": "tcp-nosync",
+    "run_index": 1,
+    "delays": [
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43077.593,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -29.512288411458332,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43077.593,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -38.247233072916664,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43077.593,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -29.401652018229168,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "uniform_30ms",
+    "mode": "tcp-nosync",
+    "run_index": 2,
+    "delays": [
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43083.906,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -20.796875,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43083.906,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -20.890625,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43083.906,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -20.78662109375,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "uniform_30ms",
+    "mode": "tcp-nosync",
+    "run_index": 3,
+    "delays": [
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43090.312,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -1.5335693359375,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43090.312,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -1.7804768880208333,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43090.312,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -1.7804768880208333,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "uniform_30ms",
+    "mode": "tcp-nosync",
+    "run_index": 4,
+    "delays": [
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43096.656,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -2.3348795572916665,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43096.656,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -2.3348795572916665,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43096.656,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -2.446533203125,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "uniform_30ms",
+    "mode": "tcp-sync",
+    "run_index": 0,
+    "delays": [
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43123.765,
+        "server_sent_at_ms": 1774462733541.0,
+        "bridge_forwarded_at_ms": 1774462733569.0,
+        "D_i": 55.04,
+        "stagger_wait_ms": 17.7,
+        "sync_hold_ms": 27.67,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 45.63,
+        "ntp_offset_ms": -11.75,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43123.765,
+        "server_sent_at_ms": 1774462733541.0,
+        "bridge_forwarded_at_ms": 1774462733570.0,
+        "D_i": 55.04,
+        "stagger_wait_ms": 17.74,
+        "sync_hold_ms": 27.27,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 45.63,
+        "ntp_offset_ms": -11.75,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43123.765,
+        "server_sent_at_ms": 1774462733551.0,
+        "bridge_forwarded_at_ms": 1774462733580.0,
+        "D_i": 44.12,
+        "stagger_wait_ms": 28.7,
+        "sync_hold_ms": 27.24,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 45.63,
+        "ntp_offset_ms": -18.797648111979168,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "uniform_30ms",
+    "mode": "tcp-sync",
+    "run_index": 1,
+    "delays": [
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 31.9999999992433,
+    "dispersion_ms": 18.475208613631143,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43150.875,
+        "server_sent_at_ms": 1774462760665.0,
+        "bridge_forwarded_at_ms": 1774462760694.0,
+        "D_i": 26.44,
+        "stagger_wait_ms": 28.83,
+        "sync_hold_ms": 27.25,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 30.52,
+        "ntp_offset_ms": 1.6147054036458333,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43150.843,
+        "server_sent_at_ms": 1774462760654.0,
+        "bridge_forwarded_at_ms": 1774462760683.0,
+        "D_i": 37.53,
+        "stagger_wait_ms": 17.79,
+        "sync_hold_ms": 27.45,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 45.77,
+        "ntp_offset_ms": -7.4849853515625,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43150.875,
+        "server_sent_at_ms": 1774462760664.0,
+        "bridge_forwarded_at_ms": 1774462760692.0,
+        "D_i": 26.44,
+        "stagger_wait_ms": 28.85,
+        "sync_hold_ms": 26.76,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 30.52,
+        "ntp_offset_ms": 1.6147054036458333,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "uniform_30ms",
+    "mode": "tcp-sync",
+    "run_index": 2,
+    "delays": [
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 46.999999998661224,
+    "dispersion_ms": 27.135462651139466,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43177.953,
+        "server_sent_at_ms": 1774462787766.0,
+        "bridge_forwarded_at_ms": 1774462787795.0,
+        "D_i": 29.52,
+        "stagger_wait_ms": 17.69,
+        "sync_hold_ms": 27.24,
+        "max_rtt_ms": 46.45,
+        "my_rtt_ms": 46.45,
+        "ntp_offset_ms": -4.1102294921875,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43178.0,
+        "server_sent_at_ms": 1774462787768.0,
+        "bridge_forwarded_at_ms": 1774462787797.0,
+        "D_i": 29.01,
+        "stagger_wait_ms": 18.29,
+        "sync_hold_ms": 27.12,
+        "max_rtt_ms": 46.45,
+        "my_rtt_ms": 46.45,
+        "ntp_offset_ms": -3.866455078125,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43177.953,
+        "server_sent_at_ms": 1774462787767.0,
+        "bridge_forwarded_at_ms": 1774462787795.0,
+        "D_i": 29.46,
+        "stagger_wait_ms": 17.79,
+        "sync_hold_ms": 27.82,
+        "max_rtt_ms": 46.45,
+        "my_rtt_ms": 46.45,
+        "ntp_offset_ms": -4.6407470703125,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "uniform_30ms",
+    "mode": "tcp-sync",
+    "run_index": 3,
+    "delays": [
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 46.999999998661224,
+    "dispersion_ms": 27.135462651139466,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43205.062,
+        "server_sent_at_ms": 1774462814867.0,
+        "bridge_forwarded_at_ms": 1774462814895.0,
+        "D_i": 30.09,
+        "stagger_wait_ms": 17.62,
+        "sync_hold_ms": 26.72,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 45.81,
+        "ntp_offset_ms": 1.5819498697916667,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43205.109,
+        "server_sent_at_ms": 1774462814870.0,
+        "bridge_forwarded_at_ms": 1774462814898.0,
+        "D_i": 29.24,
+        "stagger_wait_ms": 18.37,
+        "sync_hold_ms": 26.89,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 44.83,
+        "ntp_offset_ms": 1.6610921223958333,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43205.109,
+        "server_sent_at_ms": 1774462814868.0,
+        "bridge_forwarded_at_ms": 1774462814898.0,
+        "D_i": 29.73,
+        "stagger_wait_ms": 17.92,
+        "sync_hold_ms": 27.17,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 45.81,
+        "ntp_offset_ms": 1.6495361328125,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "uniform_30ms",
+    "mode": "tcp-sync",
+    "run_index": 4,
+    "delays": [
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 31.000000002677552,
+    "dispersion_ms": 17.897858346424286,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43232.187,
+        "server_sent_at_ms": 1774462841958.0,
+        "bridge_forwarded_at_ms": 1774462841986.0,
+        "D_i": 24.57,
+        "stagger_wait_ms": 17.79,
+        "sync_hold_ms": 26.65,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 45.84,
+        "ntp_offset_ms": -0.8268229166666666,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43232.218,
+        "server_sent_at_ms": 1774462841959.0,
+        "bridge_forwarded_at_ms": 1774462841988.0,
+        "D_i": 23.52,
+        "stagger_wait_ms": 18.79,
+        "sync_hold_ms": 27.23,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 45.84,
+        "ntp_offset_ms": -0.34765625,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43232.218,
+        "server_sent_at_ms": 1774462841960.0,
+        "bridge_forwarded_at_ms": 1774462841988.0,
+        "D_i": 23.35,
+        "stagger_wait_ms": 18.93,
+        "sync_hold_ms": 26.79,
+        "max_rtt_ms": 46.06,
+        "my_rtt_ms": 45.48,
+        "ntp_offset_ms": -0.182373046875,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "uniform_30ms",
+    "mode": "rudp-sync",
+    "run_index": 0,
+    "delays": [
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43259.328,
+        "server_sent_at_ms": 1774462869079.0,
+        "bridge_forwarded_at_ms": 1774462869109.0,
+        "D_i": 352.5,
+        "stagger_wait_ms": 15.81,
+        "sync_hold_ms": 25.8,
+        "max_rtt_ms": 46.41,
+        "my_rtt_ms": 46.41,
+        "ntp_offset_ms": 167.68416341145834,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43259.328,
+        "server_sent_at_ms": 1774462869081.0,
+        "bridge_forwarded_at_ms": 1774462869110.0,
+        "D_i": 351.08,
+        "stagger_wait_ms": 15.54,
+        "sync_hold_ms": 24.36,
+        "max_rtt_ms": 46.41,
+        "my_rtt_ms": 46.41,
+        "ntp_offset_ms": 167.97444661458334,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43259.328,
+        "server_sent_at_ms": 1774462869080.0,
+        "bridge_forwarded_at_ms": 1774462869109.0,
+        "D_i": 351.97,
+        "stagger_wait_ms": 15.82,
+        "sync_hold_ms": 24.69,
+        "max_rtt_ms": 46.41,
+        "my_rtt_ms": 46.41,
+        "ntp_offset_ms": 167.91800944010416,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "uniform_30ms",
+    "mode": "rudp-sync",
+    "run_index": 1,
+    "delays": [
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43286.437,
+        "server_sent_at_ms": 1774462896196.0,
+        "bridge_forwarded_at_ms": 1774462896225.0,
+        "D_i": 363.99,
+        "stagger_wait_ms": 15.85,
+        "sync_hold_ms": 26.56,
+        "max_rtt_ms": 47.74,
+        "my_rtt_ms": 47.74,
+        "ntp_offset_ms": 159.30147298177084,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43286.437,
+        "server_sent_at_ms": 1774462896194.0,
+        "bridge_forwarded_at_ms": 1774462896224.0,
+        "D_i": 363.63,
+        "stagger_wait_ms": 15.81,
+        "sync_hold_ms": 26.12,
+        "max_rtt_ms": 47.74,
+        "my_rtt_ms": 47.74,
+        "ntp_offset_ms": 159.11836751302084,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43286.437,
+        "server_sent_at_ms": 1774462896194.0,
+        "bridge_forwarded_at_ms": 1774462896223.0,
+        "D_i": 362.39,
+        "stagger_wait_ms": 15.83,
+        "sync_hold_ms": 26.28,
+        "max_rtt_ms": 47.74,
+        "my_rtt_ms": 47.74,
+        "ntp_offset_ms": 159.49918619791666,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "uniform_30ms",
+    "mode": "rudp-sync",
+    "run_index": 2,
+    "delays": [
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43313.546,
+        "server_sent_at_ms": 1774462923310.0,
+        "bridge_forwarded_at_ms": 1774462923339.0,
+        "D_i": 373.33,
+        "stagger_wait_ms": 15.81,
+        "sync_hold_ms": 26.01,
+        "max_rtt_ms": 47.38,
+        "my_rtt_ms": 47.38,
+        "ntp_offset_ms": 147.46044921875,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43313.546,
+        "server_sent_at_ms": 1774462923310.0,
+        "bridge_forwarded_at_ms": 1774462923339.0,
+        "D_i": 372.27,
+        "stagger_wait_ms": 15.68,
+        "sync_hold_ms": 26.25,
+        "max_rtt_ms": 47.38,
+        "my_rtt_ms": 47.38,
+        "ntp_offset_ms": 147.93253580729166,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43313.546,
+        "server_sent_at_ms": 1774462923311.0,
+        "bridge_forwarded_at_ms": 1774462923340.0,
+        "D_i": 373.66,
+        "stagger_wait_ms": 15.86,
+        "sync_hold_ms": 26.51,
+        "max_rtt_ms": 47.38,
+        "my_rtt_ms": 47.38,
+        "ntp_offset_ms": 147.62894694010416,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "uniform_30ms",
+    "mode": "rudp-sync",
+    "run_index": 3,
+    "delays": [
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43340.671,
+        "server_sent_at_ms": 1774462950433.0,
+        "bridge_forwarded_at_ms": 1774462950462.0,
+        "D_i": 402.58,
+        "stagger_wait_ms": 15.82,
+        "sync_hold_ms": 25.18,
+        "max_rtt_ms": 45.68,
+        "my_rtt_ms": 45.68,
+        "ntp_offset_ms": 123.01102701822917,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43340.671,
+        "server_sent_at_ms": 1774462950434.0,
+        "bridge_forwarded_at_ms": 1774462950462.0,
+        "D_i": 399.39,
+        "stagger_wait_ms": 15.84,
+        "sync_hold_ms": 24.78,
+        "max_rtt_ms": 45.68,
+        "my_rtt_ms": 45.68,
+        "ntp_offset_ms": 125.9193115234375,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43340.671,
+        "server_sent_at_ms": 1774462950434.0,
+        "bridge_forwarded_at_ms": 1774462950463.0,
+        "D_i": 398.55,
+        "stagger_wait_ms": 15.84,
+        "sync_hold_ms": 25.74,
+        "max_rtt_ms": 45.68,
+        "my_rtt_ms": 45.68,
+        "ntp_offset_ms": 126.49886067708333,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "uniform_30ms",
+    "mode": "rudp-sync",
+    "run_index": 4,
+    "delays": [
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ],
+      [
+        30.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43367.765,
+        "server_sent_at_ms": 1774462977558.0,
+        "bridge_forwarded_at_ms": 1774462977587.0,
+        "D_i": 368.05,
+        "stagger_wait_ms": 15.86,
+        "sync_hold_ms": 25.6,
+        "max_rtt_ms": 45.8,
+        "my_rtt_ms": 45.8,
+        "ntp_offset_ms": 144.45414225260416,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43367.765,
+        "server_sent_at_ms": 1774462977559.0,
+        "bridge_forwarded_at_ms": 1774462977588.0,
+        "D_i": 368.88,
+        "stagger_wait_ms": 15.75,
+        "sync_hold_ms": 25.8,
+        "max_rtt_ms": 45.8,
+        "my_rtt_ms": 45.8,
+        "ntp_offset_ms": 143.8721923828125,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43367.765,
+        "server_sent_at_ms": 1774462977557.0,
+        "bridge_forwarded_at_ms": 1774462977587.0,
+        "D_i": 387.13,
+        "stagger_wait_ms": 15.82,
+        "sync_hold_ms": 25.4,
+        "max_rtt_ms": 47.07,
+        "my_rtt_ms": 47.07,
+        "ntp_offset_ms": 136.19246419270834,
+        "simulated_delay_ms": 30.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_mild",
+    "mode": "tcp-nosync",
+    "run_index": 0,
+    "delays": [
+      [
+        10.0,
+        0.0
+      ],
+      [
+        45.0,
+        0.0
+      ],
+      [
+        80.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 63.00000000192085,
+    "dispersion_ms": 32.74650108591881,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43375.218,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -8.9520263671875,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43375.265,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -24.62060546875,
+        "simulated_delay_ms": 45.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43375.281,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -42.56201171875,
+        "simulated_delay_ms": 80.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_mild",
+    "mode": "tcp-nosync",
+    "run_index": 1,
+    "delays": [
+      [
+        10.0,
+        0.0
+      ],
+      [
+        45.0,
+        0.0
+      ],
+      [
+        80.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 93.99999999732245,
+    "dispersion_ms": 47.899199713196126,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43381.796,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -28.698282877604168,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43381.859,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -43.999104817708336,
+        "simulated_delay_ms": 45.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43381.89,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -65.3619384765625,
+        "simulated_delay_ms": 80.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_mild",
+    "mode": "tcp-nosync",
+    "run_index": 2,
+    "delays": [
+      [
+        10.0,
+        0.0
+      ],
+      [
+        45.0,
+        0.0
+      ],
+      [
+        80.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 93.99999999732245,
+    "dispersion_ms": 47.899199714006265,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43388.343,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": 14.817057291666666,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43388.406,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": 0.3853352864583333,
+        "simulated_delay_ms": 45.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43388.437,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -24.859415690104168,
+        "simulated_delay_ms": 80.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_mild",
+    "mode": "tcp-nosync",
+    "run_index": 3,
+    "delays": [
+      [
+        10.0,
+        0.0
+      ],
+      [
+        45.0,
+        0.0
+      ],
+      [
+        80.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 94.0000000045984,
+    "dispersion_ms": 47.89919971717087,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43394.812,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": 19.154378255208332,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43394.875,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -5.196370442708333,
+        "simulated_delay_ms": 45.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43394.906,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -18.119059244791668,
+        "simulated_delay_ms": 80.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_mild",
+    "mode": "tcp-nosync",
+    "run_index": 4,
+    "delays": [
+      [
+        10.0,
+        0.0
+      ],
+      [
+        45.0,
+        0.0
+      ],
+      [
+        80.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 93.99999999732245,
+    "dispersion_ms": 47.899199713196126,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43401.671,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": 5.7562255859375,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43401.734,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -16.2032470703125,
+        "simulated_delay_ms": 45.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43401.765,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -41.6539306640625,
+        "simulated_delay_ms": 80.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_mild",
+    "mode": "tcp-sync",
+    "run_index": 0,
+    "delays": [
+      [
+        10.0,
+        0.0
+      ],
+      [
+        45.0,
+        0.0
+      ],
+      [
+        80.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43428.921,
+        "server_sent_at_ms": 1774463038722.0,
+        "bridge_forwarded_at_ms": 1774463038765.0,
+        "D_i": 29.02,
+        "stagger_wait_ms": 87.88,
+        "sync_hold_ms": 41.95,
+        "max_rtt_ms": 76.33,
+        "my_rtt_ms": 15.44,
+        "ntp_offset_ms": -16.606282552083332,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43428.921,
+        "server_sent_at_ms": 1774463038681.0,
+        "bridge_forwarded_at_ms": 1774463038724.0,
+        "D_i": 71.39,
+        "stagger_wait_ms": 45.48,
+        "sync_hold_ms": 42.7,
+        "max_rtt_ms": 76.33,
+        "my_rtt_ms": 46.32,
+        "ntp_offset_ms": -33.695515950520836,
+        "simulated_delay_ms": 45.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43428.921,
+        "server_sent_at_ms": 1774463038653.0,
+        "bridge_forwarded_at_ms": 1774463038697.0,
+        "D_i": 99.16,
+        "stagger_wait_ms": 17.79,
+        "sync_hold_ms": 42.38,
+        "max_rtt_ms": 76.33,
+        "my_rtt_ms": 76.33,
+        "ntp_offset_ms": -52.407958984375,
+        "simulated_delay_ms": 80.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_mild",
+    "mode": "tcp-sync",
+    "run_index": 1,
+    "delays": [
+      [
+        10.0,
+        0.0
+      ],
+      [
+        45.0,
+        0.0
+      ],
+      [
+        80.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 30.999999995401595,
+    "dispersion_ms": 17.897858342223508,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43456.109,
+        "server_sent_at_ms": 1774463065885.0,
+        "bridge_forwarded_at_ms": 1774463065933.0,
+        "D_i": 19.42,
+        "stagger_wait_ms": 96.91,
+        "sync_hold_ms": 46.38,
+        "max_rtt_ms": 84.77,
+        "my_rtt_ms": 5.55,
+        "ntp_offset_ms": -9.880818684895834,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43456.078,
+        "server_sent_at_ms": 1774463065826.0,
+        "bridge_forwarded_at_ms": 1774463065874.0,
+        "D_i": 77.57,
+        "stagger_wait_ms": 38.67,
+        "sync_hold_ms": 46.26,
+        "max_rtt_ms": 84.77,
+        "my_rtt_ms": 60.6,
+        "ntp_offset_ms": -32.250040690104164,
+        "simulated_delay_ms": 45.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43456.078,
+        "server_sent_at_ms": 1774463065806.0,
+        "bridge_forwarded_at_ms": 1774463065854.0,
+        "D_i": 98.56,
+        "stagger_wait_ms": 17.72,
+        "sync_hold_ms": 46.13,
+        "max_rtt_ms": 84.77,
+        "my_rtt_ms": 84.77,
+        "ntp_offset_ms": -48.410115559895836,
+        "simulated_delay_ms": 80.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_mild",
+    "mode": "tcp-sync",
+    "run_index": 2,
+    "delays": [
+      [
+        10.0,
+        0.0
+      ],
+      [
+        45.0,
+        0.0
+      ],
+      [
+        80.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43483.265,
+        "server_sent_at_ms": 1774463093073.0,
+        "bridge_forwarded_at_ms": 1774463093124.0,
+        "D_i": 7.68,
+        "stagger_wait_ms": 103.04,
+        "sync_hold_ms": 49.91,
+        "max_rtt_ms": 92.43,
+        "my_rtt_ms": 5.45,
+        "ntp_offset_ms": 1.9607340494791667,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43483.265,
+        "server_sent_at_ms": 1774463093018.0,
+        "bridge_forwarded_at_ms": 1774463093069.0,
+        "D_i": 62.31,
+        "stagger_wait_ms": 48.45,
+        "sync_hold_ms": 49.92,
+        "max_rtt_ms": 92.43,
+        "my_rtt_ms": 61.56,
+        "ntp_offset_ms": -23.237060546875,
+        "simulated_delay_ms": 45.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43483.265,
+        "server_sent_at_ms": 1774463092989.0,
+        "bridge_forwarded_at_ms": 1774463093040.0,
+        "D_i": 93.0,
+        "stagger_wait_ms": 17.68,
+        "sync_hold_ms": 50.77,
+        "max_rtt_ms": 92.43,
+        "my_rtt_ms": 92.43,
+        "ntp_offset_ms": -38.819620768229164,
+        "simulated_delay_ms": 80.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_mild",
+    "mode": "tcp-sync",
+    "run_index": 3,
+    "delays": [
+      [
+        10.0,
+        0.0
+      ],
+      [
+        45.0,
+        0.0
+      ],
+      [
+        80.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43510.453,
+        "server_sent_at_ms": 1774463120252.0,
+        "bridge_forwarded_at_ms": 1774463120304.0,
+        "D_i": 1.0,
+        "stagger_wait_ms": 101.83,
+        "sync_hold_ms": 50.43,
+        "max_rtt_ms": 91.89,
+        "my_rtt_ms": 4.43,
+        "ntp_offset_ms": 9.197957356770834,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43510.453,
+        "server_sent_at_ms": 1774463120200.0,
+        "bridge_forwarded_at_ms": 1774463120251.0,
+        "D_i": 53.05,
+        "stagger_wait_ms": 49.87,
+        "sync_hold_ms": 50.47,
+        "max_rtt_ms": 91.89,
+        "my_rtt_ms": 60.36,
+        "ntp_offset_ms": -15.781494140625,
+        "simulated_delay_ms": 45.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43510.453,
+        "server_sent_at_ms": 1774463120169.0,
+        "bridge_forwarded_at_ms": 1774463120221.0,
+        "D_i": 85.26,
+        "stagger_wait_ms": 17.61,
+        "sync_hold_ms": 50.44,
+        "max_rtt_ms": 91.89,
+        "my_rtt_ms": 91.89,
+        "ntp_offset_ms": -30.658243815104168,
+        "simulated_delay_ms": 80.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_mild",
+    "mode": "tcp-sync",
+    "run_index": 4,
+    "delays": [
+      [
+        10.0,
+        0.0
+      ],
+      [
+        45.0,
+        0.0
+      ],
+      [
+        80.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 31.000000002677552,
+    "dispersion_ms": 17.897858346424286,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43537.609,
+        "server_sent_at_ms": 1774463147410.0,
+        "bridge_forwarded_at_ms": 1774463147462.0,
+        "D_i": 6.94,
+        "stagger_wait_ms": 89.96,
+        "sync_hold_ms": 49.53,
+        "max_rtt_ms": 91.83,
+        "my_rtt_ms": 15.58,
+        "ntp_offset_ms": 9.102864583333334,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43537.609,
+        "server_sent_at_ms": 1774463147385.0,
+        "bridge_forwarded_at_ms": 1774463147436.0,
+        "D_i": 33.43,
+        "stagger_wait_ms": 63.58,
+        "sync_hold_ms": 50.45,
+        "max_rtt_ms": 91.83,
+        "my_rtt_ms": 46.75,
+        "ntp_offset_ms": -2.1339518229166665,
+        "simulated_delay_ms": 45.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43537.64,
+        "server_sent_at_ms": 1774463147340.0,
+        "bridge_forwarded_at_ms": 1774463147392.0,
+        "D_i": 79.35,
+        "stagger_wait_ms": 17.59,
+        "sync_hold_ms": 50.39,
+        "max_rtt_ms": 91.83,
+        "my_rtt_ms": 91.83,
+        "ntp_offset_ms": -25.3345947265625,
+        "simulated_delay_ms": 80.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_mild",
+    "mode": "rudp-sync",
+    "run_index": 0,
+    "delays": [
+      [
+        10.0,
+        0.0
+      ],
+      [
+        45.0,
+        0.0
+      ],
+      [
+        80.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 110.00000000058208,
+    "dispersion_ms": 55.19359866301563,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43564.718,
+        "server_sent_at_ms": 1774463174524.0,
+        "bridge_forwarded_at_ms": 1774463174537.0,
+        "D_i": 325.01,
+        "stagger_wait_ms": 15.76,
+        "sync_hold_ms": 10.29,
+        "max_rtt_ms": 15.05,
+        "my_rtt_ms": 15.05,
+        "ntp_offset_ms": 186.47843424479166,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43564.781,
+        "server_sent_at_ms": 1774463174525.0,
+        "bridge_forwarded_at_ms": 1774463174562.0,
+        "D_i": 376.43,
+        "stagger_wait_ms": 15.84,
+        "sync_hold_ms": 33.23,
+        "max_rtt_ms": 61.87,
+        "my_rtt_ms": 61.87,
+        "ntp_offset_ms": 158.76094563802084,
+        "simulated_delay_ms": 45.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43564.828,
+        "server_sent_at_ms": 1774463174527.0,
+        "bridge_forwarded_at_ms": 1774463174579.0,
+        "D_i": 402.53,
+        "stagger_wait_ms": 15.74,
+        "sync_hold_ms": 48.66,
+        "max_rtt_ms": 92.82,
+        "my_rtt_ms": 92.82,
+        "ntp_offset_ms": 148.31184895833334,
+        "simulated_delay_ms": 80.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_mild",
+    "mode": "rudp-sync",
+    "run_index": 1,
+    "delays": [
+      [
+        10.0,
+        0.0
+      ],
+      [
+        45.0,
+        0.0
+      ],
+      [
+        80.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 110.00000000058208,
+    "dispersion_ms": 56.71860364989454,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43591.89,
+        "server_sent_at_ms": 1774463201675.0,
+        "bridge_forwarded_at_ms": 1774463201689.0,
+        "D_i": 317.28,
+        "stagger_wait_ms": 15.81,
+        "sync_hold_ms": 10.2,
+        "max_rtt_ms": 15.63,
+        "my_rtt_ms": 15.63,
+        "ntp_offset_ms": 186.50679524739584,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43591.921,
+        "server_sent_at_ms": 1774463201675.0,
+        "bridge_forwarded_at_ms": 1774463201705.0,
+        "D_i": 363.62,
+        "stagger_wait_ms": 15.77,
+        "sync_hold_ms": 25.33,
+        "max_rtt_ms": 46.19,
+        "my_rtt_ms": 46.19,
+        "ntp_offset_ms": 171.27591959635416,
+        "simulated_delay_ms": 45.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43592.0,
+        "server_sent_at_ms": 1774463201675.0,
+        "bridge_forwarded_at_ms": 1774463201727.0,
+        "D_i": 405.2,
+        "stagger_wait_ms": 15.84,
+        "sync_hold_ms": 48.16,
+        "max_rtt_ms": 93.53,
+        "my_rtt_ms": 93.53,
+        "ntp_offset_ms": 145.45601399739584,
+        "simulated_delay_ms": 80.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_mild",
+    "mode": "rudp-sync",
+    "run_index": 2,
+    "delays": [
+      [
+        10.0,
+        0.0
+      ],
+      [
+        45.0,
+        0.0
+      ],
+      [
+        80.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 125.0,
+    "dispersion_ms": 62.50066666311626,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43619.062,
+        "server_sent_at_ms": 1774463228857.0,
+        "bridge_forwarded_at_ms": 1774463228870.0,
+        "D_i": 323.62,
+        "stagger_wait_ms": 15.78,
+        "sync_hold_ms": 9.82,
+        "max_rtt_ms": 15.53,
+        "my_rtt_ms": 15.53,
+        "ntp_offset_ms": 179.34305826822916,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43619.125,
+        "server_sent_at_ms": 1774463228859.0,
+        "bridge_forwarded_at_ms": 1774463228888.0,
+        "D_i": 373.77,
+        "stagger_wait_ms": 15.74,
+        "sync_hold_ms": 26.2,
+        "max_rtt_ms": 47.08,
+        "my_rtt_ms": 47.08,
+        "ntp_offset_ms": 163.1864013671875,
+        "simulated_delay_ms": 45.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43619.187,
+        "server_sent_at_ms": 1774463228858.0,
+        "bridge_forwarded_at_ms": 1774463228911.0,
+        "D_i": 415.89,
+        "stagger_wait_ms": 15.7,
+        "sync_hold_ms": 49.52,
+        "max_rtt_ms": 94.5,
+        "my_rtt_ms": 94.5,
+        "ntp_offset_ms": 136.99458821614584,
+        "simulated_delay_ms": 80.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_mild",
+    "mode": "rudp-sync",
+    "run_index": 3,
+    "delays": [
+      [
+        10.0,
+        0.0
+      ],
+      [
+        45.0,
+        0.0
+      ],
+      [
+        80.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 110.00000000058208,
+    "dispersion_ms": 56.71860364989454,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43646.265,
+        "server_sent_at_ms": 1774463256056.0,
+        "bridge_forwarded_at_ms": 1774463256075.0,
+        "D_i": 341.0,
+        "stagger_wait_ms": 15.8,
+        "sync_hold_ms": 16.02,
+        "max_rtt_ms": 28.0,
+        "my_rtt_ms": 28.0,
+        "ntp_offset_ms": 167.82120768229166,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43646.296,
+        "server_sent_at_ms": 1774463256057.0,
+        "bridge_forwarded_at_ms": 1774463256093.0,
+        "D_i": 382.9,
+        "stagger_wait_ms": 15.77,
+        "sync_hold_ms": 32.88,
+        "max_rtt_ms": 62.21,
+        "my_rtt_ms": 62.21,
+        "ntp_offset_ms": 145.96150716145834,
+        "simulated_delay_ms": 45.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43646.375,
+        "server_sent_at_ms": 1774463256057.0,
+        "bridge_forwarded_at_ms": 1774463256115.0,
+        "D_i": 431.43,
+        "stagger_wait_ms": 15.84,
+        "sync_hold_ms": 55.28,
+        "max_rtt_ms": 105.74,
+        "my_rtt_ms": 105.74,
+        "ntp_offset_ms": 126.01778157552083,
+        "simulated_delay_ms": 80.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_mild",
+    "mode": "rudp-sync",
+    "run_index": 4,
+    "delays": [
+      [
+        10.0,
+        0.0
+      ],
+      [
+        45.0,
+        0.0
+      ],
+      [
+        80.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 109.00000000401633,
+    "dispersion_ms": 56.163451937552196,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43673.437,
+        "server_sent_at_ms": 1774463283245.0,
+        "bridge_forwarded_at_ms": 1774463283258.0,
+        "D_i": 343.05,
+        "stagger_wait_ms": 15.71,
+        "sync_hold_ms": 9.87,
+        "max_rtt_ms": 15.76,
+        "my_rtt_ms": 15.76,
+        "ntp_offset_ms": 163.1348876953125,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43673.468,
+        "server_sent_at_ms": 1774463283246.0,
+        "bridge_forwarded_at_ms": 1774463283276.0,
+        "D_i": 388.13,
+        "stagger_wait_ms": 15.8,
+        "sync_hold_ms": 25.04,
+        "max_rtt_ms": 46.03,
+        "my_rtt_ms": 46.03,
+        "ntp_offset_ms": 147.24080403645834,
+        "simulated_delay_ms": 45.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43673.546,
+        "server_sent_at_ms": 1774463283244.0,
+        "bridge_forwarded_at_ms": 1774463283297.0,
+        "D_i": 432.58,
+        "stagger_wait_ms": 15.82,
+        "sync_hold_ms": 49.3,
+        "max_rtt_ms": 94.38,
+        "my_rtt_ms": 94.38,
+        "ntp_offset_ms": 121.051025390625,
+        "simulated_delay_ms": 80.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_hard",
+    "mode": "tcp-nosync",
+    "run_index": 0,
+    "delays": [
+      [
+        5.0,
+        0.0
+      ],
+      [
+        77.5,
+        0.0
+      ],
+      [
+        150.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 156.00000000267755,
+    "dispersion_ms": 78.54510381670491,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43681.234,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -24.3760986328125,
+        "simulated_delay_ms": 5.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43681.328,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -57.242635091145836,
+        "simulated_delay_ms": 77.5,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43681.39,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -96.64982096354167,
+        "simulated_delay_ms": 150.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_hard",
+    "mode": "tcp-nosync",
+    "run_index": 1,
+    "delays": [
+      [
+        5.0,
+        0.0
+      ],
+      [
+        77.5,
+        0.0
+      ],
+      [
+        150.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 141.00000000325963,
+    "dispersion_ms": 70.63285354725765,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43688.109,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": 7.690958658854167,
+        "simulated_delay_ms": 5.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43688.187,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -27.095906575520832,
+        "simulated_delay_ms": 77.5,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43688.25,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -62.176432291666664,
+        "simulated_delay_ms": 150.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_hard",
+    "mode": "tcp-nosync",
+    "run_index": 2,
+    "delays": [
+      [
+        5.0,
+        0.0
+      ],
+      [
+        77.5,
+        0.0
+      ],
+      [
+        150.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 156.00000000267755,
+    "dispersion_ms": 78.54510381670491,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43694.937,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": 14.205281575520834,
+        "simulated_delay_ms": 5.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43695.031,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -18.558878580729168,
+        "simulated_delay_ms": 77.5,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43695.093,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -54.475382486979164,
+        "simulated_delay_ms": 150.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_hard",
+    "mode": "tcp-nosync",
+    "run_index": 3,
+    "delays": [
+      [
+        5.0,
+        0.0
+      ],
+      [
+        77.5,
+        0.0
+      ],
+      [
+        150.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 156.00000000267755,
+    "dispersion_ms": 78.54510381621085,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43701.765,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": 0.23360188802083334,
+        "simulated_delay_ms": 5.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43701.859,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -31.169881184895832,
+        "simulated_delay_ms": 77.5,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43701.921,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -69.8927001953125,
+        "simulated_delay_ms": 150.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_hard",
+    "mode": "tcp-nosync",
+    "run_index": 4,
+    "delays": [
+      [
+        5.0,
+        0.0
+      ],
+      [
+        77.5,
+        0.0
+      ],
+      [
+        150.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 141.00000000325963,
+    "dispersion_ms": 70.63285354725765,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43708.687,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -18.4288330078125,
+        "simulated_delay_ms": 5.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43708.765,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -51.2509765625,
+        "simulated_delay_ms": 77.5,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43708.828,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -90.8316650390625,
+        "simulated_delay_ms": 150.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_hard",
+    "mode": "tcp-sync",
+    "run_index": 0,
+    "delays": [
+      [
+        5.0,
+        0.0
+      ],
+      [
+        77.5,
+        0.0
+      ],
+      [
+        150.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43736.093,
+        "server_sent_at_ms": 1774463345843.0,
+        "bridge_forwarded_at_ms": 1774463345925.0,
+        "D_i": 17.6,
+        "stagger_wait_ms": 164.31,
+        "sync_hold_ms": 80.81,
+        "max_rtt_ms": 153.82,
+        "my_rtt_ms": 15.38,
+        "ntp_offset_ms": -2.5968424479166665,
+        "simulated_delay_ms": 5.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43736.093,
+        "server_sent_at_ms": 1774463345781.0,
+        "bridge_forwarded_at_ms": 1774463345863.0,
+        "D_i": 79.19,
+        "stagger_wait_ms": 102.67,
+        "sync_hold_ms": 80.63,
+        "max_rtt_ms": 153.82,
+        "my_rtt_ms": 76.43,
+        "ntp_offset_ms": -32.793986002604164,
+        "simulated_delay_ms": 77.5,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43736.093,
+        "server_sent_at_ms": 1774463345698.0,
+        "bridge_forwarded_at_ms": 1774463345780.0,
+        "D_i": 164.23,
+        "stagger_wait_ms": 17.73,
+        "sync_hold_ms": 81.34,
+        "max_rtt_ms": 153.82,
+        "my_rtt_ms": 153.82,
+        "ntp_offset_ms": -73.37504069010417,
+        "simulated_delay_ms": 150.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_hard",
+    "mode": "tcp-sync",
+    "run_index": 1,
+    "delays": [
+      [
+        5.0,
+        0.0
+      ],
+      [
+        77.5,
+        0.0
+      ],
+      [
+        150.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43763.39,
+        "server_sent_at_ms": 1774463373138.0,
+        "bridge_forwarded_at_ms": 1774463373221.0,
+        "D_i": 35.93,
+        "stagger_wait_ms": 173.31,
+        "sync_hold_ms": 81.83,
+        "max_rtt_ms": 155.18,
+        "my_rtt_ms": 5.4,
+        "ntp_offset_ms": -26.285603841145832,
+        "simulated_delay_ms": 5.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43763.39,
+        "server_sent_at_ms": 1774463373068.0,
+        "bridge_forwarded_at_ms": 1774463373151.0,
+        "D_i": 105.6,
+        "stagger_wait_ms": 103.54,
+        "sync_hold_ms": 81.55,
+        "max_rtt_ms": 155.18,
+        "my_rtt_ms": 63.95,
+        "ntp_offset_ms": -59.156412760416664,
+        "simulated_delay_ms": 77.5,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43763.39,
+        "server_sent_at_ms": 1774463372984.0,
+        "bridge_forwarded_at_ms": 1774463373067.0,
+        "D_i": 191.48,
+        "stagger_wait_ms": 17.69,
+        "sync_hold_ms": 82.12,
+        "max_rtt_ms": 155.18,
+        "my_rtt_ms": 155.18,
+        "ntp_offset_ms": -99.891357421875,
+        "simulated_delay_ms": 150.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_hard",
+    "mode": "tcp-sync",
+    "run_index": 2,
+    "delays": [
+      [
+        5.0,
+        0.0
+      ],
+      [
+        77.5,
+        0.0
+      ],
+      [
+        150.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43790.656,
+        "server_sent_at_ms": 1774463400417.0,
+        "bridge_forwarded_at_ms": 1774463400500.0,
+        "D_i": 32.59,
+        "stagger_wait_ms": 167.38,
+        "sync_hold_ms": 81.41,
+        "max_rtt_ms": 155.2,
+        "my_rtt_ms": 12.95,
+        "ntp_offset_ms": -21.029337565104168,
+        "simulated_delay_ms": 5.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43790.656,
+        "server_sent_at_ms": 1774463400342.0,
+        "bridge_forwarded_at_ms": 1774463400425.0,
+        "D_i": 109.58,
+        "stagger_wait_ms": 90.43,
+        "sync_hold_ms": 82.03,
+        "max_rtt_ms": 155.2,
+        "my_rtt_ms": 78.57,
+        "ntp_offset_ms": -54.88916015625,
+        "simulated_delay_ms": 77.5,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43790.656,
+        "server_sent_at_ms": 1774463400269.0,
+        "bridge_forwarded_at_ms": 1774463400352.0,
+        "D_i": 182.25,
+        "stagger_wait_ms": 17.8,
+        "sync_hold_ms": 81.74,
+        "max_rtt_ms": 155.2,
+        "my_rtt_ms": 155.2,
+        "ntp_offset_ms": -95.8697509765625,
+        "simulated_delay_ms": 150.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_hard",
+    "mode": "tcp-sync",
+    "run_index": 3,
+    "delays": [
+      [
+        5.0,
+        0.0
+      ],
+      [
+        77.5,
+        0.0
+      ],
+      [
+        150.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43817.937,
+        "server_sent_at_ms": 1774463427704.0,
+        "bridge_forwarded_at_ms": 1774463427786.0,
+        "D_i": 21.7,
+        "stagger_wait_ms": 168.5,
+        "sync_hold_ms": 81.53,
+        "max_rtt_ms": 154.17,
+        "my_rtt_ms": 15.24,
+        "ntp_offset_ms": -13.737996419270834,
+        "simulated_delay_ms": 5.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43817.937,
+        "server_sent_at_ms": 1774463427631.0,
+        "bridge_forwarded_at_ms": 1774463427714.0,
+        "D_i": 93.85,
+        "stagger_wait_ms": 96.26,
+        "sync_hold_ms": 81.13,
+        "max_rtt_ms": 154.17,
+        "my_rtt_ms": 78.56,
+        "ntp_offset_ms": -47.423909505208336,
+        "simulated_delay_ms": 77.5,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43817.937,
+        "server_sent_at_ms": 1774463427553.0,
+        "bridge_forwarded_at_ms": 1774463427635.0,
+        "D_i": 172.46,
+        "stagger_wait_ms": 17.69,
+        "sync_hold_ms": 80.99,
+        "max_rtt_ms": 154.17,
+        "my_rtt_ms": 154.17,
+        "ntp_offset_ms": -86.612060546875,
+        "simulated_delay_ms": 150.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_hard",
+    "mode": "tcp-sync",
+    "run_index": 4,
+    "delays": [
+      [
+        5.0,
+        0.0
+      ],
+      [
+        77.5,
+        0.0
+      ],
+      [
+        150.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 16.00000000325963,
+    "dispersion_ms": 9.23760430891596,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43845.187,
+        "server_sent_at_ms": 1774463454968.0,
+        "bridge_forwarded_at_ms": 1774463455046.0,
+        "D_i": 16.18,
+        "stagger_wait_ms": 153.28,
+        "sync_hold_ms": 76.59,
+        "max_rtt_ms": 144.84,
+        "my_rtt_ms": 15.06,
+        "ntp_offset_ms": -2.9342854817708335,
+        "simulated_delay_ms": 5.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43845.187,
+        "server_sent_at_ms": 1774463454894.0,
+        "bridge_forwarded_at_ms": 1774463454972.0,
+        "D_i": 89.05,
+        "stagger_wait_ms": 80.3,
+        "sync_hold_ms": 76.24,
+        "max_rtt_ms": 144.84,
+        "my_rtt_ms": 78.79,
+        "ntp_offset_ms": -36.453125,
+        "simulated_delay_ms": 77.5,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43845.203,
+        "server_sent_at_ms": 1774463454833.0,
+        "bridge_forwarded_at_ms": 1774463454910.0,
+        "D_i": 151.88,
+        "stagger_wait_ms": 17.52,
+        "sync_hold_ms": 77.01,
+        "max_rtt_ms": 144.84,
+        "my_rtt_ms": 144.84,
+        "ntp_offset_ms": -70.31795247395833,
+        "simulated_delay_ms": 150.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_hard",
+    "mode": "rudp-sync",
+    "run_index": 0,
+    "delays": [
+      [
+        5.0,
+        0.0
+      ],
+      [
+        77.5,
+        0.0
+      ],
+      [
+        150.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 218.0000000007567,
+    "dispersion_ms": 109.39073696347317,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43872.25,
+        "server_sent_at_ms": 1774463482085.0,
+        "bridge_forwarded_at_ms": 1774463482098.0,
+        "D_i": 335.97,
+        "stagger_wait_ms": 15.83,
+        "sync_hold_ms": 9.95,
+        "max_rtt_ms": 15.63,
+        "my_rtt_ms": 15.63,
+        "ntp_offset_ms": 169.3927001953125,
+        "simulated_delay_ms": 5.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43872.375,
+        "server_sent_at_ms": 1774463482086.0,
+        "bridge_forwarded_at_ms": 1774463482138.0,
+        "D_i": 408.84,
+        "stagger_wait_ms": 15.81,
+        "sync_hold_ms": 49.79,
+        "max_rtt_ms": 93.44,
+        "my_rtt_ms": 93.44,
+        "ntp_offset_ms": 135.678955078125,
+        "simulated_delay_ms": 77.5,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43872.468,
+        "server_sent_at_ms": 1774463482087.0,
+        "bridge_forwarded_at_ms": 1774463482171.0,
+        "D_i": 475.59,
+        "stagger_wait_ms": 15.85,
+        "sync_hold_ms": 81.14,
+        "max_rtt_ms": 157.05,
+        "my_rtt_ms": 157.05,
+        "ntp_offset_ms": 99.28617350260417,
+        "simulated_delay_ms": 150.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_hard",
+    "mode": "rudp-sync",
+    "run_index": 1,
+    "delays": [
+      [
+        5.0,
+        0.0
+      ],
+      [
+        77.5,
+        0.0
+      ],
+      [
+        150.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 218.99999999732245,
+    "dispersion_ms": 109.5003805155068,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43899.531,
+        "server_sent_at_ms": 1774463509358.0,
+        "bridge_forwarded_at_ms": 1774463509371.0,
+        "D_i": 327.93,
+        "stagger_wait_ms": 15.81,
+        "sync_hold_ms": 10.6,
+        "max_rtt_ms": 15.53,
+        "my_rtt_ms": 15.53,
+        "ntp_offset_ms": 177.265380859375,
+        "simulated_delay_ms": 5.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43899.64,
+        "server_sent_at_ms": 1774463509359.0,
+        "bridge_forwarded_at_ms": 1774463509411.0,
+        "D_i": 396.43,
+        "stagger_wait_ms": 15.84,
+        "sync_hold_ms": 48.94,
+        "max_rtt_ms": 94.0,
+        "my_rtt_ms": 94.0,
+        "ntp_offset_ms": 144.33097330729166,
+        "simulated_delay_ms": 77.5,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43899.75,
+        "server_sent_at_ms": 1774463509357.0,
+        "bridge_forwarded_at_ms": 1774463509440.0,
+        "D_i": 463.18,
+        "stagger_wait_ms": 15.82,
+        "sync_hold_ms": 79.45,
+        "max_rtt_ms": 155.35,
+        "my_rtt_ms": 155.35,
+        "ntp_offset_ms": 108.22696940104167,
+        "simulated_delay_ms": 150.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_hard",
+    "mode": "rudp-sync",
+    "run_index": 2,
+    "delays": [
+      [
+        5.0,
+        0.0
+      ],
+      [
+        77.5,
+        0.0
+      ],
+      [
+        150.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 218.99999999732245,
+    "dispersion_ms": 109.5003805155068,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43926.796,
+        "server_sent_at_ms": 1774463536617.0,
+        "bridge_forwarded_at_ms": 1774463536629.0,
+        "D_i": 323.31,
+        "stagger_wait_ms": 15.82,
+        "sync_hold_ms": 9.86,
+        "max_rtt_ms": 14.64,
+        "my_rtt_ms": 14.64,
+        "ntp_offset_ms": 183.14306640625,
+        "simulated_delay_ms": 5.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43926.906,
+        "server_sent_at_ms": 1774463536618.0,
+        "bridge_forwarded_at_ms": 1774463536663.0,
+        "D_i": 380.2,
+        "stagger_wait_ms": 15.85,
+        "sync_hold_ms": 41.98,
+        "max_rtt_ms": 79.63,
+        "my_rtt_ms": 79.63,
+        "ntp_offset_ms": 152.15275065104166,
+        "simulated_delay_ms": 77.5,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43927.015,
+        "server_sent_at_ms": 1774463536619.0,
+        "bridge_forwarded_at_ms": 1774463536710.0,
+        "D_i": 472.35,
+        "stagger_wait_ms": 15.84,
+        "sync_hold_ms": 87.79,
+        "max_rtt_ms": 171.44,
+        "my_rtt_ms": 171.44,
+        "ntp_offset_ms": 113.2105712890625,
+        "simulated_delay_ms": 150.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_hard",
+    "mode": "rudp-sync",
+    "run_index": 3,
+    "delays": [
+      [
+        5.0,
+        0.0
+      ],
+      [
+        77.5,
+        0.0
+      ],
+      [
+        150.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 218.0000000007567,
+    "dispersion_ms": 109.00000000037835,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43954.078,
+        "server_sent_at_ms": 1774463563880.0,
+        "bridge_forwarded_at_ms": 1774463563893.0,
+        "D_i": 330.7,
+        "stagger_wait_ms": 15.85,
+        "sync_hold_ms": 10.59,
+        "max_rtt_ms": 16.02,
+        "my_rtt_ms": 16.02,
+        "ntp_offset_ms": 181.05692545572916,
+        "simulated_delay_ms": 5.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43954.187,
+        "server_sent_at_ms": 1774463563879.0,
+        "bridge_forwarded_at_ms": 1774463563923.0,
+        "D_i": 384.15,
+        "stagger_wait_ms": 15.84,
+        "sync_hold_ms": 40.99,
+        "max_rtt_ms": 77.97,
+        "my_rtt_ms": 77.97,
+        "ntp_offset_ms": 152.5411376953125,
+        "simulated_delay_ms": 77.5,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43954.296,
+        "server_sent_at_ms": 1774463563879.0,
+        "bridge_forwarded_at_ms": 1774463563970.0,
+        "D_i": 461.11,
+        "stagger_wait_ms": 15.82,
+        "sync_hold_ms": 88.46,
+        "max_rtt_ms": 171.12,
+        "my_rtt_ms": 171.12,
+        "ntp_offset_ms": 110.5618896484375,
+        "simulated_delay_ms": 150.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_hard",
+    "mode": "rudp-sync",
+    "run_index": 4,
+    "delays": [
+      [
+        5.0,
+        0.0
+      ],
+      [
+        77.5,
+        0.0
+      ],
+      [
+        150.0,
+        0.0
+      ]
+    ],
+    "spread_ms": 219.0000000045984,
+    "dispersion_ms": 109.50038051913923,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43981.359,
+        "server_sent_at_ms": 1774463591148.0,
+        "bridge_forwarded_at_ms": 1774463591161.0,
+        "D_i": 332.42,
+        "stagger_wait_ms": 15.85,
+        "sync_hold_ms": 10.76,
+        "max_rtt_ms": 16.58,
+        "my_rtt_ms": 16.58,
+        "ntp_offset_ms": 181.2271728515625,
+        "simulated_delay_ms": 5.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43981.468,
+        "server_sent_at_ms": 1774463591149.0,
+        "bridge_forwarded_at_ms": 1774463591201.0,
+        "D_i": 400.73,
+        "stagger_wait_ms": 15.84,
+        "sync_hold_ms": 48.84,
+        "max_rtt_ms": 93.41,
+        "my_rtt_ms": 93.41,
+        "ntp_offset_ms": 151.536865234375,
+        "simulated_delay_ms": 77.5,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43981.578,
+        "server_sent_at_ms": 1774463591148.0,
+        "bridge_forwarded_at_ms": 1774463591239.0,
+        "D_i": 458.27,
+        "stagger_wait_ms": 15.83,
+        "sync_hold_ms": 88.88,
+        "max_rtt_ms": 172.27,
+        "my_rtt_ms": 172.27,
+        "ntp_offset_ms": 110.77091471354167,
+        "simulated_delay_ms": 150.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_jitter",
+    "mode": "tcp-nosync",
+    "run_index": 0,
+    "delays": [
+      [
+        10.0,
+        3.0
+      ],
+      [
+        65.0,
+        21.5
+      ],
+      [
+        120.0,
+        40.0
+      ]
+    ],
+    "spread_ms": 93.0000000007567,
+    "dispersion_ms": 47.35328218133102,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43989.25,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": 14.975992838541666,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43989.312,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -16.539794921875,
+        "simulated_delay_ms": 65.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43989.343,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -54.519205729166664,
+        "simulated_delay_ms": 120.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_jitter",
+    "mode": "tcp-nosync",
+    "run_index": 1,
+    "delays": [
+      [
+        10.0,
+        3.0
+      ],
+      [
+        65.0,
+        21.5
+      ],
+      [
+        120.0,
+        40.0
+      ]
+    ],
+    "spread_ms": 63.00000000192085,
+    "dispersion_ms": 36.373066960055425,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 43995.968,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": 17.663004557291668,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 43996.031,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -15.060343424479166,
+        "simulated_delay_ms": 65.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 43996.031,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -50.1014404296875,
+        "simulated_delay_ms": 120.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_jitter",
+    "mode": "tcp-nosync",
+    "run_index": 2,
+    "delays": [
+      [
+        10.0,
+        3.0
+      ],
+      [
+        65.0,
+        21.5
+      ],
+      [
+        120.0,
+        40.0
+      ]
+    ],
+    "spread_ms": 109.00000000401633,
+    "dispersion_ms": 56.163451937552196,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 44002.687,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": 3.5395914713541665,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 44002.765,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -16.732096354166668,
+        "simulated_delay_ms": 65.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 44002.796,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -66.3212890625,
+        "simulated_delay_ms": 120.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_jitter",
+    "mode": "tcp-nosync",
+    "run_index": 3,
+    "delays": [
+      [
+        10.0,
+        3.0
+      ],
+      [
+        65.0,
+        21.5
+      ],
+      [
+        120.0,
+        40.0
+      ]
+    ],
+    "spread_ms": 171.99999999866122,
+    "dispersion_ms": 86.09490886936842,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 44009.171,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -22.087565104166668,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 44009.25,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -36.236531575520836,
+        "simulated_delay_ms": 65.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 44009.343,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -57.360107421875,
+        "simulated_delay_ms": 120.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_jitter",
+    "mode": "tcp-nosync",
+    "run_index": 4,
+    "delays": [
+      [
+        10.0,
+        3.0
+      ],
+      [
+        65.0,
+        21.5
+      ],
+      [
+        120.0,
+        40.0
+      ]
+    ],
+    "spread_ms": 172.00000000593718,
+    "dispersion_ms": 86.1239416994637,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 44015.859,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -0.081787109375,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 44015.937,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -24.385213216145832,
+        "simulated_delay_ms": 65.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 44016.031,
+        "server_sent_at_ms": 0.0,
+        "bridge_forwarded_at_ms": 0.0,
+        "D_i": 0.0,
+        "stagger_wait_ms": 0.0,
+        "sync_hold_ms": 0.0,
+        "max_rtt_ms": 0.0,
+        "my_rtt_ms": 0.0,
+        "ntp_offset_ms": -46.907063802083336,
+        "simulated_delay_ms": 120.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_jitter",
+    "mode": "tcp-sync",
+    "run_index": 0,
+    "delays": [
+      [
+        10.0,
+        3.0
+      ],
+      [
+        65.0,
+        21.5
+      ],
+      [
+        120.0,
+        40.0
+      ]
+    ],
+    "spread_ms": 31.9999999992433,
+    "dispersion_ms": 18.475208613631143,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 44043.328,
+        "server_sent_at_ms": 1774463653040.0,
+        "bridge_forwarded_at_ms": 1774463653106.0,
+        "D_i": 1.0,
+        "stagger_wait_ms": 167.94,
+        "sync_hold_ms": 65.22,
+        "max_rtt_ms": 121.53,
+        "my_rtt_ms": 15.17,
+        "ntp_offset_ms": 17.9188232421875,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 44043.296,
+        "server_sent_at_ms": 1774463652977.0,
+        "bridge_forwarded_at_ms": 1774463653043.0,
+        "D_i": 63.86,
+        "stagger_wait_ms": 105.12,
+        "sync_hold_ms": 65.05,
+        "max_rtt_ms": 121.53,
+        "my_rtt_ms": 62.58,
+        "ntp_offset_ms": -9.894571940104166,
+        "simulated_delay_ms": 65.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 44043.296,
+        "server_sent_at_ms": 1774463652890.0,
+        "bridge_forwarded_at_ms": 1774463652956.0,
+        "D_i": 151.33,
+        "stagger_wait_ms": 17.7,
+        "sync_hold_ms": 64.66,
+        "max_rtt_ms": 121.53,
+        "my_rtt_ms": 121.53,
+        "ntp_offset_ms": -43.568115234375,
+        "simulated_delay_ms": 120.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_jitter",
+    "mode": "tcp-sync",
+    "run_index": 1,
+    "delays": [
+      [
+        10.0,
+        3.0
+      ],
+      [
+        65.0,
+        21.5
+      ],
+      [
+        120.0,
+        40.0
+      ]
+    ],
+    "spread_ms": 0.0,
+    "dispersion_ms": 0.0,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 44070.531,
+        "server_sent_at_ms": 1774463680296.0,
+        "bridge_forwarded_at_ms": 1774463680348.0,
+        "D_i": 4.68,
+        "stagger_wait_ms": 126.72,
+        "sync_hold_ms": 50.53,
+        "max_rtt_ms": 93.09,
+        "my_rtt_ms": 15.11,
+        "ntp_offset_ms": 14.696573893229166,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 44070.531,
+        "server_sent_at_ms": 1774463680238.0,
+        "bridge_forwarded_at_ms": 1774463680290.0,
+        "D_i": 62.29,
+        "stagger_wait_ms": 69.13,
+        "sync_hold_ms": 50.32,
+        "max_rtt_ms": 93.09,
+        "my_rtt_ms": 58.62,
+        "ntp_offset_ms": -10.0902099609375,
+        "simulated_delay_ms": 65.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 44070.531,
+        "server_sent_at_ms": 1774463680188.0,
+        "bridge_forwarded_at_ms": 1774463680239.0,
+        "D_i": 113.67,
+        "stagger_wait_ms": 17.78,
+        "sync_hold_ms": 51.01,
+        "max_rtt_ms": 93.09,
+        "my_rtt_ms": 93.09,
+        "ntp_offset_ms": -30.5494384765625,
+        "simulated_delay_ms": 120.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_jitter",
+    "mode": "tcp-sync",
+    "run_index": 2,
+    "delays": [
+      [
+        10.0,
+        3.0
+      ],
+      [
+        65.0,
+        21.5
+      ],
+      [
+        120.0,
+        40.0
+      ]
+    ],
+    "spread_ms": 30.999999995401595,
+    "dispersion_ms": 17.897858342223508,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 44097.781,
+        "server_sent_at_ms": 1774463707528.0,
+        "bridge_forwarded_at_ms": 1774463707597.0,
+        "D_i": 6.77,
+        "stagger_wait_ms": 147.71,
+        "sync_hold_ms": 67.04,
+        "max_rtt_ms": 126.12,
+        "my_rtt_ms": 15.31,
+        "ntp_offset_ms": 6.626871744791667,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 44097.812,
+        "server_sent_at_ms": 1774463707483.0,
+        "bridge_forwarded_at_ms": 1774463707552.0,
+        "D_i": 50.76,
+        "stagger_wait_ms": 103.62,
+        "sync_hold_ms": 66.69,
+        "max_rtt_ms": 126.12,
+        "my_rtt_ms": 46.47,
+        "ntp_offset_ms": -10.9207763671875,
+        "simulated_delay_ms": 65.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 44097.781,
+        "server_sent_at_ms": 1774463707399.0,
+        "bridge_forwarded_at_ms": 1774463707467.0,
+        "D_i": 136.77,
+        "stagger_wait_ms": 17.66,
+        "sync_hold_ms": 67.57,
+        "max_rtt_ms": 126.12,
+        "my_rtt_ms": 126.12,
+        "ntp_offset_ms": -52.364664713541664,
+        "simulated_delay_ms": 120.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_jitter",
+    "mode": "tcp-sync",
+    "run_index": 3,
+    "delays": [
+      [
+        10.0,
+        3.0
+      ],
+      [
+        65.0,
+        21.5
+      ],
+      [
+        120.0,
+        40.0
+      ]
+    ],
+    "spread_ms": 31.000000002677552,
+    "dispersion_ms": 17.897858346424286,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 44125.046,
+        "server_sent_at_ms": 1774463734820.0,
+        "bridge_forwarded_at_ms": 1774463734881.0,
+        "D_i": 28.85,
+        "stagger_wait_ms": 145.28,
+        "sync_hold_ms": 58.3,
+        "max_rtt_ms": 108.21,
+        "my_rtt_ms": 15.96,
+        "ntp_offset_ms": -7.987467447916667,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 44125.015,
+        "server_sent_at_ms": 1774463734756.0,
+        "bridge_forwarded_at_ms": 1774463734815.0,
+        "D_i": 93.03,
+        "stagger_wait_ms": 81.07,
+        "sync_hold_ms": 57.9,
+        "max_rtt_ms": 108.21,
+        "my_rtt_ms": 62.99,
+        "ntp_offset_ms": -38.106730143229164,
+        "simulated_delay_ms": 65.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 44125.046,
+        "server_sent_at_ms": 1774463734694.0,
+        "bridge_forwarded_at_ms": 1774463734754.0,
+        "D_i": 156.41,
+        "stagger_wait_ms": 17.77,
+        "sync_hold_ms": 58.71,
+        "max_rtt_ms": 108.21,
+        "my_rtt_ms": 108.21,
+        "ntp_offset_ms": -53.581787109375,
+        "simulated_delay_ms": 120.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_jitter",
+    "mode": "tcp-sync",
+    "run_index": 4,
+    "delays": [
+      [
+        10.0,
+        3.0
+      ],
+      [
+        65.0,
+        21.5
+      ],
+      [
+        120.0,
+        40.0
+      ]
+    ],
+    "spread_ms": 46.999999998661224,
+    "dispersion_ms": 27.135462651139466,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 44152.359,
+        "server_sent_at_ms": 1774463762095.0,
+        "bridge_forwarded_at_ms": 1774463762186.0,
+        "D_i": 52.5,
+        "stagger_wait_ms": 185.52,
+        "sync_hold_ms": 90.27,
+        "max_rtt_ms": 171.66,
+        "my_rtt_ms": 15.62,
+        "ntp_offset_ms": -32.012003580729164,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 44152.312,
+        "server_sent_at_ms": 1774463762021.0,
+        "bridge_forwarded_at_ms": 1774463762112.0,
+        "D_i": 125.41,
+        "stagger_wait_ms": 112.64,
+        "sync_hold_ms": 89.82,
+        "max_rtt_ms": 171.66,
+        "my_rtt_ms": 92.64,
+        "ntp_offset_ms": -64.85693359375,
+        "simulated_delay_ms": 65.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 44152.312,
+        "server_sent_at_ms": 1774463761928.0,
+        "bridge_forwarded_at_ms": 1774463762019.0,
+        "D_i": 220.35,
+        "stagger_wait_ms": 17.74,
+        "sync_hold_ms": 90.46,
+        "max_rtt_ms": 171.66,
+        "my_rtt_ms": 171.66,
+        "ntp_offset_ms": -104.03181966145833,
+        "simulated_delay_ms": 120.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_jitter",
+    "mode": "rudp-sync",
+    "run_index": 0,
+    "delays": [
+      [
+        10.0,
+        3.0
+      ],
+      [
+        65.0,
+        21.5
+      ],
+      [
+        120.0,
+        40.0
+      ]
+    ],
+    "spread_ms": 109.00000000401633,
+    "dispersion_ms": 62.931179343988035,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 44179.437,
+        "server_sent_at_ms": 1774463789255.0,
+        "bridge_forwarded_at_ms": 1774463789268.0,
+        "D_i": 358.57,
+        "stagger_wait_ms": 15.82,
+        "sync_hold_ms": 10.37,
+        "max_rtt_ms": 16.02,
+        "my_rtt_ms": 16.02,
+        "ntp_offset_ms": 147.7325439453125,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 44179.546,
+        "server_sent_at_ms": 1774463789256.0,
+        "bridge_forwarded_at_ms": 1774463789309.0,
+        "D_i": 473.71,
+        "stagger_wait_ms": 15.84,
+        "sync_hold_ms": 49.41,
+        "max_rtt_ms": 95.0,
+        "my_rtt_ms": 95.0,
+        "ntp_offset_ms": 103.59452311197917,
+        "simulated_delay_ms": 65.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 44179.546,
+        "server_sent_at_ms": 1774463789255.0,
+        "bridge_forwarded_at_ms": 1774463789306.0,
+        "D_i": 434.45,
+        "stagger_wait_ms": 15.84,
+        "sync_hold_ms": 47.41,
+        "max_rtt_ms": 90.74,
+        "my_rtt_ms": 90.74,
+        "ntp_offset_ms": 116.65083821614583,
+        "simulated_delay_ms": 120.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_jitter",
+    "mode": "rudp-sync",
+    "run_index": 1,
+    "delays": [
+      [
+        10.0,
+        3.0
+      ],
+      [
+        65.0,
+        21.5
+      ],
+      [
+        120.0,
+        40.0
+      ]
+    ],
+    "spread_ms": 156.00000000267755,
+    "dispersion_ms": 78.54510381621085,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 44206.609,
+        "server_sent_at_ms": 1774463816430.0,
+        "bridge_forwarded_at_ms": 1774463816444.0,
+        "D_i": 346.85,
+        "stagger_wait_ms": 15.82,
+        "sync_hold_ms": 9.38,
+        "max_rtt_ms": 16.04,
+        "my_rtt_ms": 16.04,
+        "ntp_offset_ms": 158.43204752604166,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 44206.671,
+        "server_sent_at_ms": 1774463816430.0,
+        "bridge_forwarded_at_ms": 1774463816474.0,
+        "D_i": 411.58,
+        "stagger_wait_ms": 15.76,
+        "sync_hold_ms": 41.66,
+        "max_rtt_ms": 78.29,
+        "my_rtt_ms": 78.29,
+        "ntp_offset_ms": 130.67777506510416,
+        "simulated_delay_ms": 65.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 44206.765,
+        "server_sent_at_ms": 1774463816430.0,
+        "bridge_forwarded_at_ms": 1774463816522.0,
+        "D_i": 546.89,
+        "stagger_wait_ms": 15.83,
+        "sync_hold_ms": 88.43,
+        "max_rtt_ms": 173.3,
+        "my_rtt_ms": 173.3,
+        "ntp_offset_ms": 73.5648193359375,
+        "simulated_delay_ms": 120.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_jitter",
+    "mode": "rudp-sync",
+    "run_index": 2,
+    "delays": [
+      [
+        10.0,
+        3.0
+      ],
+      [
+        65.0,
+        21.5
+      ],
+      [
+        120.0,
+        40.0
+      ]
+    ],
+    "spread_ms": 141.00000000325963,
+    "dispersion_ms": 71.79368588956584,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 44233.812,
+        "server_sent_at_ms": 1774463843643.0,
+        "bridge_forwarded_at_ms": 1774463843657.0,
+        "D_i": 352.12,
+        "stagger_wait_ms": 15.8,
+        "sync_hold_ms": 10.3,
+        "max_rtt_ms": 16.03,
+        "my_rtt_ms": 16.03,
+        "ntp_offset_ms": 162.03731282552084,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 44233.906,
+        "server_sent_at_ms": 1774463843643.0,
+        "bridge_forwarded_at_ms": 1774463843694.0,
+        "D_i": 424.96,
+        "stagger_wait_ms": 15.83,
+        "sync_hold_ms": 48.68,
+        "max_rtt_ms": 92.45,
+        "my_rtt_ms": 92.45,
+        "ntp_offset_ms": 127.817138671875,
+        "simulated_delay_ms": 65.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 44233.953,
+        "server_sent_at_ms": 1774463843643.0,
+        "bridge_forwarded_at_ms": 1774463843702.0,
+        "D_i": 455.88,
+        "stagger_wait_ms": 15.84,
+        "sync_hold_ms": 56.4,
+        "max_rtt_ms": 107.97,
+        "my_rtt_ms": 107.97,
+        "ntp_offset_ms": 112.47074381510417,
+        "simulated_delay_ms": 120.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_jitter",
+    "mode": "rudp-sync",
+    "run_index": 3,
+    "delays": [
+      [
+        10.0,
+        3.0
+      ],
+      [
+        65.0,
+        21.5
+      ],
+      [
+        120.0,
+        40.0
+      ]
+    ],
+    "spread_ms": 250.0,
+    "dispersion_ms": 125.34086856794995,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 44261.031,
+        "server_sent_at_ms": 1774463870852.0,
+        "bridge_forwarded_at_ms": 1774463870865.0,
+        "D_i": 341.4,
+        "stagger_wait_ms": 15.8,
+        "sync_hold_ms": 10.39,
+        "max_rtt_ms": 15.55,
+        "my_rtt_ms": 15.55,
+        "ntp_offset_ms": 172.2540283203125,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 44261.14,
+        "server_sent_at_ms": 1774463870851.0,
+        "bridge_forwarded_at_ms": 1774463870918.0,
+        "D_i": 423.42,
+        "stagger_wait_ms": 15.82,
+        "sync_hold_ms": 64.89,
+        "max_rtt_ms": 124.6,
+        "my_rtt_ms": 124.6,
+        "ntp_offset_ms": 124.62740071614583,
+        "simulated_delay_ms": 65.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 44261.281,
+        "server_sent_at_ms": 1774463870851.0,
+        "bridge_forwarded_at_ms": 1774463870942.0,
+        "D_i": 447.96,
+        "stagger_wait_ms": 15.79,
+        "sync_hold_ms": 86.97,
+        "max_rtt_ms": 169.75,
+        "my_rtt_ms": 169.75,
+        "ntp_offset_ms": 114.82881673177083,
+        "simulated_delay_ms": 120.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  },
+  {
+    "scenario": "hetero_jitter",
+    "mode": "rudp-sync",
+    "run_index": 4,
+    "delays": [
+      [
+        10.0,
+        3.0
+      ],
+      [
+        65.0,
+        21.5
+      ],
+      [
+        120.0,
+        40.0
+      ]
+    ],
+    "spread_ms": 235.00000000058208,
+    "dispersion_ms": 124.35031162061877,
+    "clients": [
+      {
+        "client_id": "c1",
+        "received_at_mono": 44288.343,
+        "server_sent_at_ms": 1774463898169.0,
+        "bridge_forwarded_at_ms": 1774463898182.0,
+        "D_i": 328.4,
+        "stagger_wait_ms": 15.85,
+        "sync_hold_ms": 10.57,
+        "max_rtt_ms": 15.85,
+        "my_rtt_ms": 15.85,
+        "ntp_offset_ms": 182.302490234375,
+        "simulated_delay_ms": 10.0,
+        "error": null
+      },
+      {
+        "client_id": "c2",
+        "received_at_mono": 44288.39,
+        "server_sent_at_ms": 1774463898168.0,
+        "bridge_forwarded_at_ms": 1774463898204.0,
+        "D_i": 401.63,
+        "stagger_wait_ms": 15.82,
+        "sync_hold_ms": 32.61,
+        "max_rtt_ms": 61.75,
+        "my_rtt_ms": 61.75,
+        "ntp_offset_ms": 150.20100911458334,
+        "simulated_delay_ms": 65.0,
+        "error": null
+      },
+      {
+        "client_id": "c3",
+        "received_at_mono": 44288.578,
+        "server_sent_at_ms": 1774463898169.0,
+        "bridge_forwarded_at_ms": 1774463898237.0,
+        "D_i": 411.22,
+        "stagger_wait_ms": 15.85,
+        "sync_hold_ms": 64.09,
+        "max_rtt_ms": 123.25,
+        "my_rtt_ms": 123.25,
+        "ntp_offset_ms": 145.98750813802084,
+        "simulated_delay_ms": 120.0,
+        "error": null
+      }
+    ],
+    "error": null,
+    "n_clients": 3
+  }
+]

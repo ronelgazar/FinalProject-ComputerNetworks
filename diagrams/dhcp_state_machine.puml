@@ -1,0 +1,194 @@
+@startuml dhcp_state_machine
+!theme plain
+skinparam backgroundColor #0F172A
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam defaultFontColor #CBD5E1
+skinparam shadowing false
+skinparam roundcorner 16
+skinparam ArrowThickness 2
+skinparam ArrowColor #38BDF8
+skinparam ArrowFontColor #94A3B8
+skinparam ArrowFontSize 11
+
+skinparam state {
+  BackgroundColor #1E2E45
+  BorderColor #2A405E
+  BorderThickness 2
+  FontColor #E8F4FD
+  FontSize 12
+  StartColor #38BDF8
+  EndColor #F87171
+  AttributeFontColor #94A3B8
+  AttributeFontSize 10
+}
+
+skinparam state<<server>> {
+  BackgroundColor #0F2640
+  BorderColor #38BDF8
+  FontColor #38BDF8
+}
+skinparam state<<client>> {
+  BackgroundColor #0A2010
+  BorderColor #4ADE80
+  FontColor #4ADE80
+}
+skinparam state<<error>> {
+  BackgroundColor #2A1010
+  BorderColor #F87171
+  FontColor #F87171
+}
+skinparam state<<bound>> {
+  BackgroundColor #1A1040
+  BorderColor #A855F7
+  FontColor #A855F7
+}
+skinparam state<<done>> {
+  BackgroundColor #0A2818
+  BorderColor #4ADE80
+  FontColor #4ADE80
+}
+
+title <size:18><color:#38BDF8>**DHCP State Machine**</color></size>\n<size:11><color:#64748B>Client (ירוק) | Server (כחול) | RFC 2131</color></size>
+
+' ══════════════════════════════════════════════════════
+' CLIENT STATES (left column)
+' ══════════════════════════════════════════════════════
+state "CLIENT" as C {
+
+  [*] --> INIT
+
+  state INIT <<client>>
+  INIT : **INIT**
+  INIT : אין IP
+  INIT : מחכה להפעלה
+
+  state SELECTING <<client>>
+  SELECTING : **SELECTING**
+  SELECTING : שלח DISCOVER
+  SELECTING : UDP broadcast :67
+  SELECTING : src=0.0.0.0
+  SELECTING : XID נוצר (random)
+
+  state REQUESTING <<client>>
+  REQUESTING : **REQUESTING**
+  REQUESTING : בחר OFFER
+  REQUESTING : שלח REQUEST
+  REQUESTING : כולל: server_id
+  REQUESTING : כולל: requested_ip
+
+  state BOUND <<bound>>
+  BOUND : **BOUND**
+  BOUND : קיבל ACK
+  BOUND : ip addr add
+  BOUND : T1 = lease/2
+  BOUND : T2 = lease*0.875
+
+  state RENEWING <<client>>
+  RENEWING : **RENEWING**
+  RENEWING : T1 פג — unicast
+  RENEWING : REQUEST לשרת המקורי
+
+  state REBINDING <<client>>
+  REBINDING : **REBINDING**
+  REBINDING : T2 פג — broadcast
+  REBINDING : REQUEST לכל שרת
+
+  state DECLINED <<error>>
+  DECLINED : **DECLINED**
+  DECLINED : ARP conflict!
+  DECLINED : שלח DECLINE
+
+  INIT        --> SELECTING  : dhcp_client\nמתחיל
+  SELECTING   --> REQUESTING : OFFER\nהתקבל
+  REQUESTING  --> BOUND      : ACK\n(IP + options)
+  REQUESTING  --> INIT       : NAK\nמהשרת
+  BOUND       --> RENEWING   : T1\nפג
+  RENEWING    --> BOUND      : ACK\n(חידוש)
+  RENEWING    --> REBINDING  : אין תגובה\nעד T2
+  REBINDING   --> BOUND      : ACK\nמשרת כלשהו
+  REBINDING   --> INIT       : T2 פג\n(lease אבד)
+  REQUESTING  --> DECLINED   : ARP\ndetects conflict
+  DECLINED    --> INIT       : המתנה קצרה
+
+}
+
+' ══════════════════════════════════════════════════════
+' SERVER STATES (right column)
+' ══════════════════════════════════════════════════════
+state "SERVER (dhcp_server.py)" as S {
+
+  [*] --> LISTEN
+
+  state LISTEN <<server>>
+  LISTEN : **LISTEN**
+  LISTEN : UDP socket :67
+  LISTEN : cleanup_leases()
+  LISTEN : ממתין לבקשה
+
+  state OFFERING <<server>>
+  OFFERING : **OFFERING**
+  OFFERING : DISCOVER התקבל
+  OFFERING : alloc_ip() — linear scan
+  OFFERING : בודק by_mac + by_ip
+  OFFERING : שולח OFFER
+
+  state SELECTING_SERVER <<server>>
+  SELECTING_SERVER : **WAITING REQUEST**
+  SELECTING_SERVER : OFFER נשלח
+  SELECTING_SERVER : מחכה ל-REQUEST
+  SELECTING_SERVER : XID חייב להתאים
+
+  state ACKNOWLEDGING <<server>>
+  ACKNOWLEDGING : **ACKNOWLEDGING**
+  ACKNOWLEDGING : REQUEST עם server_id שלנו
+  ACKNOWLEDGING : מעדכן leases.json
+  ACKNOWLEDGING : os.replace(.tmp) — atomic
+  ACKNOWLEDGING : שולח ACK + options
+
+  state LEASED <<done>>
+  LEASED : **LEASED**
+  LEASED : lease רשום
+  LEASED : by_mac[mac] = {ip, exp}
+  LEASED : by_ip[ip] = mac
+  LEASED : exp = now + lease_time
+
+  state NAK_SENT <<error>>
+  NAK_SENT : **NAK**
+  NAK_SENT : XID לא תואם
+  NAK_SENT : או IP כבר תפוס
+  NAK_SENT : שולח DHCPNAK
+
+  LISTEN           --> OFFERING         : DISCOVER\nהתקבל
+  OFFERING         --> SELECTING_SERVER : OFFER\nנשלח
+  SELECTING_SERVER --> ACKNOWLEDGING    : REQUEST\n(server_id שלנו)
+  SELECTING_SERVER --> LISTEN           : REQUEST\n(server_id אחר)
+  ACKNOWLEDGING    --> LEASED           : ACK נשלח\nsave_state()
+  LEASED           --> LISTEN           : ממתין\nלבקשה הבאה
+  SELECTING_SERVER --> NAK_SENT        : XID\nלא תואם
+  NAK_SENT         --> LISTEN           : חזרה\lלהאזנה
+
+}
+
+' ══════════════════════════════════════════════════════
+' DORA message arrows (client <--> server)
+' ══════════════════════════════════════════════════════
+SELECTING        -[#FACC15,bold]-> OFFERING         : **DISCOVER**\nbcast :67\n0.0.0.0→255.255.255.255
+OFFERING         -[#FB923C,bold]-> REQUESTING       : **OFFER**\nunicast :68\nIP + lease + options
+REQUESTING       -[#4ADE80,bold]-> ACKNOWLEDGING    : **REQUEST**\nbcast :67\nrequested_ip
+ACKNOWLEDGING    -[#A855F7,bold]-> BOUND            : **ACK**\nunicast :68\nIP+mask+gw+dns+lease
+
+legend bottom
+  |= צבע |= משמעות |
+  |<back:#0A2010><color:#4ADE80> Client </color></back>| מצבי לקוח (RFC 2131) |
+  |<back:#0F2640><color:#38BDF8> Server </color></back>| מצבי שרת (dhcp_server.py) |
+  |<back:#1A1040><color:#A855F7> BOUND </color></back>| IP מוקצה ופעיל |
+  |<back:#2A1010><color:#F87171> Error </color></back>| שגיאה / NAK / Decline |
+  |= חץ |= הודעה |
+  |<color:#FACC15>━━</color>| DISCOVER — broadcast מהלקוח |
+  |<color:#FB923C>━━</color>| OFFER — הצעה מהשרת |
+  |<color:#4ADE80>━━</color>| REQUEST — בקשת לקוח |
+  |<color:#A855F7>━━</color>| ACK — אישור שרת |
+endlegend
+
+@enduml
