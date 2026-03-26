@@ -56,11 +56,12 @@ async def _register_client_rtt(client_id: str, rtt_ms: float,
     async with _rtt_lock:
         _client_rtts[client_id] = rtt_ms
         if rtt_samples and len(rtt_samples) >= 3:
-            _client_rtt_samples[client_id] = sorted(rtt_samples[:3])
+            # Store all N samples so _compute_D can use p10/p90 statistics
+            _client_rtt_samples[client_id] = sorted(float(x) for x in rtt_samples)
         if offset_ms is not None:
             _client_offsets[client_id] = offset_ms
-    log.info("RTT registry: client=%s rtt=%.1fms samples=%s offset=%s",
-             client_id, rtt_ms, rtt_samples,
+    log.info("RTT registry: client=%s rtt=%.1fms n_samples=%d offset=%s",
+             client_id, rtt_ms, len(rtt_samples) if rtt_samples else 0,
              f"{offset_ms:.2f}ms" if offset_ms is not None else "n/a")
 
 
@@ -69,20 +70,26 @@ def _get_max_rtt_ms() -> float:
 
 
 def _compute_D(client_id: Optional[str]) -> float:
-    """Conservative one-way delay estimate."""
+    """
+    Accurate one-way delay estimate using p10/p90 statistics over all N samples.
+    Mirrors the improved formula in RUDP/exam_server.py — see that file for details.
+    """
     if not client_id:
         return 50.0
     if client_id in _client_rtt_samples:
-        s = sorted(_client_rtt_samples[client_id])
-        rtt_med = s[len(s) // 2]
-        j_rtt   = s[-1] - s[0]
+        s = _client_rtt_samples[client_id]   # already sorted, all N samples
+        n = len(s)
+        p10_idx = max(0, int(n * 0.10))
+        p90_idx = min(n - 1, int(n * 0.90))
+        rtt_p10 = s[p10_idx]
+        idr     = s[p90_idx] - rtt_p10
         offset  = _client_offsets.get(client_id)
         if offset is not None:
-            d_down = rtt_med / 2.0 - offset
-            D = max(1.0, d_down + j_rtt / 2.0)
+            d_down = rtt_p10 / 2.0 - offset
+            D = max(1.0, d_down + idr * 0.25)
             return D
-        return (rtt_med + j_rtt) / 2.0
-    rtt = _client_rtts.get(client_id, 100.0) #only one sample only gets to this if the client_id is known but no samples, which shouldn't happen often
+        return (rtt_p10 + idr) / 2.0
+    rtt = _client_rtts.get(client_id, 100.0)
     return rtt / 2.0
 
 
@@ -372,9 +379,11 @@ async def handle_connection(reader: asyncio.StreamReader, writer: asyncio.Stream
                 if SYNC_ENABLED:
                     rtt_samples = msg.get('rtt_samples')
                     if rtt_samples and len(rtt_samples) >= 3 and client_id:
+                        s_sorted = sorted(rtt_samples)
+                        rtt_median = s_sorted[len(s_sorted) // 2]
                         await _register_client_rtt(client_id,
-                                                   rtt_samples[1],
-                                                   rtt_samples,
+                                                   rtt_median,
+                                                   s_sorted,
                                                    offset_ms=msg.get('offset_ms'))
                     _coordinator.reset()
 
@@ -406,9 +415,22 @@ async def handle_connection(reader: asyncio.StreamReader, writer: asyncio.Stream
                     fresh_samples = msg.get('rtt_samples')
                     fresh_offset  = msg.get('offset_ms')
                     if fresh_samples and len(fresh_samples) >= 3 and client_id:
-                        await _register_client_rtt(client_id, fresh_samples[1],
-                                                   fresh_samples, offset_ms=fresh_offset)
+                        fs_sorted = sorted(fresh_samples)
+                        fs_median = fs_sorted[len(fs_sorted) // 2]
+                        await _register_client_rtt(client_id, fs_median,
+                                                   fs_sorted, offset_ms=fresh_offset)
 
+                # ── Pre-encode exam BEFORE stagger wait ───────────────────────
+                # json.dumps on the 33 KB exam dict takes ~27 ms.  If this
+                # happens AFTER the stagger sleep, each client's serialization
+                # adds variable latency to server_sent_at_ms, defeating the
+                # coordinator's timing.  Pre-encoding here (during the
+                # COLLECTION_WINDOW_SEC) moves that cost to before T_send,
+                # leaving only a tiny meta-dict to serialize on the hot path.
+                current_exam  = _load_exam()
+                exam_json_str = json.dumps(current_exam)   # ~27 ms, done now
+
+                if SYNC_ENABLED:
                     D = _compute_D(client_id)
                     await _coordinator.register(client_id or 'unknown', D)
                     t_send = await _coordinator.wait_t_send(client_id or 'unknown')
@@ -419,23 +441,33 @@ async def handle_connection(reader: asyncio.StreamReader, writer: asyncio.Stream
                                  client_id, D, wait_ms)
                         await asyncio.sleep(wait_ms / 1000.0)
 
-                current_exam = _load_exam()
-                resp = {
-                    "type":    "exam_resp",
-                    "req_id":  req_id,
-                    "exam":    current_exam,
-                }
+                # ── Hot path: only tiny meta dict serialized after stagger ───
+                # server_sent_at_ms stamped here; exam_json_str injected via
+                # string concatenation (no re-serialization of the 33 KB exam).
                 if SYNC_ENABLED:
                     delay = _deliver_delay_ms(client_id)
-                    resp.update({
+                    meta = {
+                        "type":              "exam_resp",
+                        "req_id":            req_id,
+                        "server_sent_at_ms": int(time.time() * 1000),
                         "deliver_delay_ms":  delay,
                         "max_rtt_ms":        round(_get_max_rtt_ms(), 2),
                         "my_rtt_ms":         round(_client_rtts.get(client_id, 50.0) if client_id else 50.0, 2),
                         "D_i":               round(D, 2),
                         "T_send_planned_ms": round(t_send, 2),
                         "stagger_wait_ms":   round(max(0.0, wait_ms), 2),
-                    })
-                await _send(writer, resp)
+                    }
+                    # Inject pre-serialized exam without re-running json.dumps
+                    meta_str = json.dumps(meta)
+                    line = meta_str[:-1] + ',"exam":' + exam_json_str + '}\n'
+                else:
+                    line = json.dumps({"type": "exam_resp", "req_id": req_id,
+                                       "exam": current_exam}) + '\n'
+                try:
+                    writer.write(line.encode('utf-8'))
+                    await writer.drain()
+                except Exception as e:
+                    log.warning("exam_resp write failed: %s", e)
 
                 if client_id:
                     await _update_client(client_id,

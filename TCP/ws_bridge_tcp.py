@@ -147,6 +147,7 @@ async def _tcp_to_ws(ws, reader: asyncio.StreamReader, state: dict):
                         continue
 
                     # Layer 2: self-correcting synchronized delivery
+                    extra: dict = {}   # fields to inject after the hold
                     if (pkt_type in SYNC_PACKET_TYPES
                             and 'server_sent_at_ms' in obj
                             and state['max_rtt_ms'] > 0):
@@ -171,20 +172,41 @@ async def _tcp_to_ws(ws, reader: asyncio.StreamReader, state: dict):
                             log.info("Sync hold %.1f ms for %s", actual_hold, pkt_type)
                             await asyncio.sleep(actual_hold / 1000.0)
 
-                        obj['bridge_forwarded_at_ms'] = int(_time_mod.time() * 1000)
-                        obj['sync_hold_ms']           = round(actual_hold, 2)
-                        obj['sync_target_ms']         = round(target_ms, 2)
+                        extra['bridge_forwarded_at_ms'] = int(_time_mod.time() * 1000)
+                        extra['sync_hold_ms']           = round(actual_hold, 2)
+                        extra['sync_target_ms']         = round(target_ms, 2)
 
                     elif 'deliver_delay_ms' in obj and obj['deliver_delay_ms'] > 0:
                         await asyncio.sleep(obj['deliver_delay_ms'] / 1000.0)
-                        obj['bridge_forwarded_at_ms'] = int(_time_mod.time() * 1000)
-                        obj['sync_hold_ms']           = obj['deliver_delay_ms']
+                        extra['bridge_forwarded_at_ms'] = int(_time_mod.time() * 1000)
+                        extra['sync_hold_ms']           = obj['deliver_delay_ms']
 
                     if pkt_type == 'schedule_resp':
                         state['max_rtt_ms'] = float(obj.get('max_rtt_ms', state['max_rtt_ms']))
                         state['my_rtt_ms']  = float(obj.get('my_rtt_ms', state['my_rtt_ms']))
 
-                await ws.send(json.dumps(obj))
+                    # ── Hot forward: avoid re-serialising the 33 KB exam payload ──
+                    # json.dumps(obj) on an exam_resp takes ~27 ms.  With k clients
+                    # sharing one bridge container, they serialise sequentially on
+                    # the event loop → k×27 ms spread.
+                    # Fix: inject the small `extra` fields directly into the raw
+                    # text via string concatenation; the heavy exam payload passes
+                    # through unmodified.
+                    if extra and pkt_type == 'exam_resp':
+                        # text ends with '}' (stripped above).  Append extra fields.
+                        suffix = ''.join(
+                            f',"{k}":{v}' if isinstance(v, (int, float)) else f',"{k}":{json.dumps(v)}'
+                            for k, v in extra.items()
+                        )
+                        await ws.send(text[:-1] + suffix + '}')
+                    elif extra:
+                        # Small packets: safe to update obj + re-dump (< 200 bytes)
+                        obj.update(extra)
+                        await ws.send(json.dumps(obj))
+                    else:
+                        await ws.send(json.dumps(obj))
+                else:
+                    await ws.send(json.dumps(obj))
 
             except (ValueError, TypeError):
                 await ws.send(text)

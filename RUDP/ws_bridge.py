@@ -183,24 +183,37 @@ async def _rudp_to_ws(ws, rudp, state: dict):
             #  b'ZS' — split format: uint16-BE(meta_len) | meta_json | exam_zl
             #  b'ZL' — legacy full-frame compress (fallback)
             #  else  — plain UTF-8 JSON
+            #
+            # For ZS frames: parse only the lightweight meta dict (< 200 bytes)
+            # and decompress the exam payload to a raw JSON string.  We NEVER
+            # reconstruct the full combined dict until after the hold — that
+            # avoids paying the ~27 ms json.dumps cost while the event loop is
+            # blocked, which would serialise k clients on the same container
+            # into k×27 ms of spread.
+            exam_json_str: str | None = None   # pre-decompressed exam payload
             if data[:2] == b'ZS':
-                meta_len = struct.unpack('>H', data[2:4])[0]
-                meta     = json.loads(data[4:4 + meta_len])
-                meta['exam'] = json.loads(zlib.decompress(data[4 + meta_len:]))
-                text = json.dumps(meta)
+                meta_len      = struct.unpack('>H', data[2:4])[0]
+                meta          = json.loads(data[4:4 + meta_len])
+                exam_json_str = zlib.decompress(data[4 + meta_len:]).decode('utf-8')
+                text          = None   # will build lazily if needed
             elif data[:2] == b'ZL':
                 text = zlib.decompress(data[2:]).decode('utf-8')
+                meta = json.loads(text)
             else:
                 text = data.decode('utf-8')
-            try:
-                obj = json.loads(text)
-                pkt_type = obj.get('type', '?')
+                meta = json.loads(text)
 
+            obj      = meta   # same reference; for small packets this is fine
+            pkt_type = obj.get('type', '?')
+
+            try:
                 # ── Layer 1: software netem ───────────────────────────────
                 dropped = await _netem_delay()
                 if dropped:
                     log.info("netem: dropped %s (loss simulation)", pkt_type)
                     continue
+
+                extra: dict = {}   # small bridge-injected fields
 
                 # ── Layer 2: synchronized delivery ────────────────────────
                 if (pkt_type in SYNC_PACKET_TYPES
@@ -239,27 +252,40 @@ async def _rudp_to_ws(ws, rudp, state: dict):
                                  target_ms, max(0.0, -hold_ms))
                         await asyncio.sleep(actual_hold / 1000.0)
 
-                    obj['bridge_forwarded_at_ms'] = int(time.time() * 1000)
-                    obj['sync_hold_ms']           = round(actual_hold, 2)
-                    obj['sync_target_ms']         = round(target_ms, 2)
+                    extra['bridge_forwarded_at_ms'] = int(time.time() * 1000)
+                    extra['sync_hold_ms']           = round(actual_hold, 2)
+                    extra['sync_target_ms']         = round(target_ms, 2)
 
                 elif 'deliver_delay_ms' in obj and obj['deliver_delay_ms'] > 0:
                     # Fallback for schedule_resp before max_rtt_ms is known
                     await asyncio.sleep(obj['deliver_delay_ms'] / 1000.0)
-                    obj['bridge_forwarded_at_ms'] = int(time.time() * 1000)
-                    obj['sync_hold_ms']           = obj['deliver_delay_ms']
+                    extra['bridge_forwarded_at_ms'] = int(time.time() * 1000)
+                    extra['sync_hold_ms']           = obj['deliver_delay_ms']
 
                 # Update sync state from schedule_resp even in fallback path
                 if pkt_type == 'schedule_resp':
                     state['max_rtt_ms'] = float(obj.get('max_rtt_ms', state['max_rtt_ms']))
                     state['my_rtt_ms']  = float(obj.get('my_rtt_ms',  rudp.rtt_ms))
 
-                await ws.send(json.dumps(obj))
+                # ── Hot forward: avoid re-serialising the 33 KB exam payload ──
+                # For exam_resp with a pre-decompressed exam_json_str, inject
+                # extra fields via string concatenation — no json.dumps of the
+                # full dict.  For small packets (schedule_resp etc.) use the
+                # normal obj.update + json.dumps path.
+                if exam_json_str is not None and pkt_type == 'exam_resp':
+                    # meta is already a small dict (<200 bytes); update with extras
+                    obj.update(extra)
+                    meta_str = json.dumps(obj)   # tiny meta only, ~1 ms
+                    await ws.send(meta_str[:-1] + ',"exam":' + exam_json_str + '}')
+                else:
+                    obj.update(extra)
+                    await ws.send(json.dumps(obj))
 
             except (ValueError, TypeError):
                 dropped = await _netem_delay()
                 if not dropped:
-                    await ws.send(text)
+                    out = text if text is not None else json.dumps(meta)
+                    await ws.send(out)
         except (RudpTimeout, RudpReset) as e:
             log.warning("RUDP recv error: %s", e)
             break

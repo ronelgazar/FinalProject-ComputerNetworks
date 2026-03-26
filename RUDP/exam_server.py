@@ -61,7 +61,7 @@ _EXAM_START_AT_MS: Optional[int] = (
 #    absorbing any RUDP retransmission delay that already occurred.
 
 _client_rtts: Dict[str, float] = {}             # client_id → RTT in ms (from hello)
-_client_rtt_samples: Dict[str, list] = {}        # client_id → [min, med, max] from NTP
+_client_rtt_samples: Dict[str, list] = {}        # client_id → all N sorted RTT samples from NTP
 _client_offsets: Dict[str, float] = {}           # client_id → NTP clock offset (ms)
 _rtt_lock = asyncio.Lock()
 JITTER_BUFFER_MS = 5
@@ -78,11 +78,13 @@ async def _register_client_rtt(client_id: str, rtt_ms: float,
     async with _rtt_lock:
         _client_rtts[client_id] = rtt_ms
         if rtt_samples and len(rtt_samples) >= 3:
-            _client_rtt_samples[client_id] = sorted(rtt_samples[:3])
+            # Store all N samples (not just 3) so _compute_D can use better statistics
+            _client_rtt_samples[client_id] = sorted(float(x) for x in rtt_samples)
         if offset_ms is not None:
             _client_offsets[client_id] = offset_ms
-    log.info("RTT registry: client=%s rtt=%.1fms samples=%s offset=%.2fms",
-             client_id, rtt_ms, rtt_samples, offset_ms if offset_ms is not None else 0.0)
+    log.info("RTT registry: client=%s rtt=%.1fms n_samples=%d offset=%.2fms",
+             client_id, rtt_ms, len(rtt_samples) if rtt_samples else 0,
+             offset_ms if offset_ms is not None else 0.0)
 
 
 def _get_max_rtt_ms() -> float:
@@ -91,35 +93,51 @@ def _get_max_rtt_ms() -> float:
 
 def _compute_D(client_id: Optional[str]) -> float:
     """
-    Conservative one-way delay estimate for a client.
+    Accurate one-way delay estimate for a client.
 
-    When fresh NTP offset data is available (from the pre-exam refresh):
-      d_down = RTT_med / 2 - offset_ms
-      J_rtt  = max(r1,r2,r3) - min(...)
-      D_i    = d_down + J_rtt / 2   (asymmetric-corrected estimate)
+    Uses all N NTP samples (9 Phase-1 + 5 Phase-2 = 14 total) for robust
+    statistics.  Key improvement over the old 3-sample median approach:
 
-    Without offset data (symmetric RTT estimate — assumes equal up/down path):
-      RTT_med = median(r1, r2, r3)
-      J_rtt   = max - min
-      D_i     = (RTT_med + J_rtt) / 2
+    1. Base RTT: p10 (10th percentile) of all samples — closest to the true
+       minimum propagation delay with outlier resistance.  Minimum RTT is the
+       ideal target but a single-sample minimum is noise-sensitive; p10 gives
+       the same accuracy with better robustness.
 
-    Falls back to rtt_ms/2 if no 3-sample data is available.
+    2. Jitter estimate: p90 - p10 (inter-decile range) instead of max - min.
+       Excludes the top and bottom 10% of extreme asyncio scheduling noise,
+       giving a much tighter spread estimate.
+
+    3. Jitter margin: reduced from 0.5× to 0.25× — with more samples the
+       estimate is already tight, so a smaller buffer is needed.
+
+    When NTP offset data is available (asymmetric correction):
+      d_down = rtt_p10 / 2 - offset_ms   (exact for symmetric paths, very close
+                                           for asymmetric Docker-loopback paths)
+      D_i    = max(1, d_down + idr * 0.25)
+
+    Without offset data:
+      D_i    = (rtt_p10 + idr) / 2
+
+    Falls back to rtt_ms/2 if no sample data is available.
     """
     if not client_id:
         return 50.0
     if client_id in _client_rtt_samples:
-        s = sorted(_client_rtt_samples[client_id])
-        rtt_med = s[len(s) // 2]
-        j_rtt   = s[-1] - s[0]
+        s = _client_rtt_samples[client_id]   # already sorted, all N samples
+        n = len(s)
+        # p10 and p90 indices
+        p10_idx = max(0, int(n * 0.10))
+        p90_idx = min(n - 1, int(n * 0.90))
+        rtt_p10 = s[p10_idx]
+        idr     = s[p90_idx] - rtt_p10   # inter-decile range (jitter estimate)
         offset  = _client_offsets.get(client_id)
         if offset is not None:
-            # Asymmetric correction: d_down = RTT/2 - offset
-            d_down = rtt_med / 2.0 - offset
-            D = max(1.0, d_down + j_rtt / 2.0)
-            log.debug("D_i for %s: rtt_med=%.1f offset=%.2f d_down=%.2f j=%.1f → D=%.1f",
-                      client_id, rtt_med, offset, d_down, j_rtt, D)
+            d_down = rtt_p10 / 2.0 - offset
+            D = max(1.0, d_down + idr * 0.25)
+            log.debug("D_i for %s: n=%d rtt_p10=%.1f offset=%.2f d_down=%.2f idr=%.1f → D=%.1f",
+                      client_id, n, rtt_p10, offset, d_down, idr, D)
             return D
-        return (rtt_med + j_rtt) / 2.0
+        return (rtt_p10 + idr) / 2.0
     rtt = _client_rtts.get(client_id, 100.0)
     return rtt / 2.0   # fallback
 
@@ -451,9 +469,11 @@ async def handle_connection(conn: RudpSocket):
                 # These give better D_i than the RUDP handshake RTT alone.
                 rtt_samples = msg.get('rtt_samples')
                 if rtt_samples and len(rtt_samples) >= 3 and client_id:
+                    s_sorted = sorted(rtt_samples)
+                    rtt_median = s_sorted[len(s_sorted) // 2]   # true median regardless of N
                     await _register_client_rtt(client_id,
-                                               rtt_samples[1],   # median as primary
-                                               rtt_samples,
+                                               rtt_median,
+                                               s_sorted,
                                                offset_ms=msg.get('offset_ms'))
                 # Reset coordinator so it is fresh for the upcoming exam_req wave
                 _coordinator.reset()
@@ -499,14 +519,16 @@ async def handle_connection(conn: RudpSocket):
                 fresh_samples = msg.get('rtt_samples')
                 fresh_offset  = msg.get('offset_ms')
                 if fresh_samples and len(fresh_samples) >= 3 and client_id:
+                    fs_sorted = sorted(fresh_samples)
+                    fs_median = fs_sorted[len(fs_sorted) // 2]
                     await _register_client_rtt(
                         client_id,
-                        fresh_samples[1],          # median as primary RTT
-                        fresh_samples,
+                        fs_median,
+                        fs_sorted,
                         offset_ms=fresh_offset,
                     )
-                    log.info("exam_req: fresh RTT update for %s samples=%s offset=%s",
-                             client_id, fresh_samples, fresh_offset)
+                    log.info("exam_req: fresh RTT update for %s n=%d offset=%s",
+                             client_id, len(fs_sorted), fresh_offset)
 
                 # Load exam AND pre-encode it BEFORE the coordinator wait so that:
                 #  1. Disk I/O (~28 ms) happens during the 1.5s COLLECTION_WINDOW
